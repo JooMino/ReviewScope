@@ -1,74 +1,167 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <title>ReviewScope - 결과</title>
-  <link rel="stylesheet" href="/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <title>ReviewScope - 분석 결과</title>
+    <link href="/style.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-<div class="container">
 
-  <!-- 제목: 실제 키워드 표시 -->
-  <h1>
-    <span th:text="${keyword}">키워드</span> 분석 완료!
-  </h1>
+    <!-- [1] 좌측 메뉴 -->
+    <nav class="left-sidebar">
+        <div class="brand">Review<span>Scope</span></div>
+        <ul class="menu-list">
+            <a href="/" class="menu-item">🏠 홈 대시보드</a>
+            <li class="menu-item active">📊 심층 분석</li>
+            <li class="menu-item">💬 커뮤니티 반응</li>
+            <li class="menu-item">⚙️ 설정</li>
+        </ul>
+    </nav>
 
-  <!-- 에러가 있으면 에러만 보여줌 -->
-  <div th:if="${error}" class="error" th:text="${error}">에러 메시지</div>
+    <!-- [2] 중앙 메인 영역 -->
+    <main class="main-container">
+        <!-- 상단바 -->
+        <header class="top-bar">
+            🔍 &nbsp; <span th:text="${keyword}">키워드</span> 분석 리포트
+        </header>
 
-  <!-- 에러가 없을 때 결과 영역 -->
-  <div th:if="${error} == null">
+        <div class="feed-area">
+            
+            <!-- 에러 메시지 -->
+            <div th:if="${error}" style="background:rgba(255,75,75,0.1); color:#ff4b4b; padding:20px; border-radius:12px; margin-bottom:20px;">
+                ⚠️ <span th:text="${error}">에러 발생</span>
+            </div>
 
-    <!-- 차트 -->
-    <div style="max-width:400px;margin:0 auto 2rem;">
-      <canvas id="chart"></canvas>
-    </div>
+            <div th:if="${error} == null">
+                <!-- 1. 긍정/부정 차트 카드 -->
+                <div class="content-card">
+                    <h2 style="margin-bottom: 15px; font-size: 18px;">😊 긍정 vs 부정 여론 비율</h2>
+                    <div class="big-chart-box">
+                        <!-- 차트 영역 -->
+                        <div class="chart-wrapper">
+                            <canvas id="chart"></canvas>
+                        </div>
+                        
+                        <!-- 범례 영역 -->
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <div class="dot" style="background: var(--accent);"></div>
+                                <span>긍정적인 의견 (48%)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="dot" style="background: var(--accent-red);"></div>
+                                <span>부정적인 의견 (35%)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="dot" style="background: #A0A0A0;"></div>
+                                <span>중립/기타 (17%)</span>
+                            </div>
+                            <div style="margin-top: 10px; font-size: 13px; color: #666;">
+                                총 수집 게시글: <strong>5건</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-	<h2>📄 최신 5개 결과 파일</h2>
-		
-		<div class="file-list">
-			<div class="file-box" th:each="f : ${recentFiles}">
-			  <div class="preview">
-			    <pre th:text="${f.preview}"></pre>
-			  </div>
-			  <div class="meta">
-			    <span th:text="${f.size + '자 | ' + f.date}"></span>
-			  </div>
-			</div>
-		</div>
-	</div>
-</div>
+                <!-- 2. 실시간 피드 리스트 -->
+                <div class="content-card">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                        <h3 style="font-size:18px;">🔥 실시간 수집 결과</h3>
+                        <span style="color: var(--accent); font-size: 13px; cursor: pointer;">더보기 ></span>
+                    </div>
 
-<script th:inline="javascript">
-  const ctx = document.getElementById('chart').getContext('2d');
+                    <!-- 게시글 반복 출력 -->
+                    <div class="post-card" th:each="f : ${recentFiles}">
+                        <div class="post-thumb">📄</div>
+                        <div class="post-info">
+                            <!-- 파일 내용 앞부분을 제목처럼 사용 -->
+                            <h3 th:text="${#strings.abbreviate(f.preview, 30)}">제목 미리보기</h3>
+                            <p>
+                                <span th:text="${f.date}">2026-02-05</span> | 
+                                <span th:text="${f.size} + '자'">100자</span>
+                            </p>
+                            <p style="margin-top:4px; opacity:0.6;" th:text="${f.preview}">내용 미리보기...</p>
+                        </div>
+                    </div>
 
-  // 나중에 실제 값으로 교체
-  const sentimentData = [48, 35, 17, 0];
+                    <!-- 결과 없을 때 -->
+                    <div th:if="${#lists.isEmpty(recentFiles)}" style="text-align: center; color: #666; padding: 20px;">
+                        수집된 데이터가 없습니다.
+                    </div>
+                </div>
+            </div>
 
-  new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: ['긍정', '부정', '중립', '기타'],
-      datasets: [{
-        data: sentimentData,
-        backgroundColor: ['#4CAF50', '#F44336', '#FF9800', '#9E9E9E'],
-        borderWidth: 4,
-        borderColor: '#fff'
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        title: {
-          display: true,
-          text: /*[[${keyword}]]*/ '키워드' + ' 감성분석',
-          font: { size: 18 }
-        }
-      }
-    }
-  });
-</script>
+        </div>
+    </main>
+
+    <!-- [3] 우측 사이드바 -->
+    <aside class="right-sidebar">
+        
+        <!-- 위젯: 연관 검색어 (예시) -->
+        <div class="widget-card">
+            <div class="widget-title">
+                <span>📱 연관 키워드</span>
+            </div>
+            <div class="rank-list">
+                <div class="rank-item">
+                    <div class="rank-left">
+                        <div class="model-icon">1</div>
+                        <span>발열</span>
+                    </div>
+                    <span class="percent">42%</span>
+                </div>
+                <div class="rank-item">
+                    <div class="rank-left">
+                        <div class="model-icon">2</div>
+                        <span>배터리</span>
+                    </div>
+                    <span class="percent">28%</span>
+                </div>
+                <div class="rank-item">
+                    <div class="rank-left">
+                        <div class="model-icon">3</div>
+                        <span>가격</span>
+                    </div>
+                    <span class="percent">15%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 배너 -->
+        <div class="widget-card" style="background: linear-gradient(45deg, #00E0C6, #0078FF); color: white; text-align: center;">
+            <h3 style="font-size: 16px;">ReviewScope<br>Pro</h3>
+            <p style="font-size: 12px; margin-top: 5px; opacity: 0.9;">더 강력한 인사이트를<br>경험해보세요.</p>
+        </div>
+
+    </aside>
+
+    <script th:inline="javascript">
+        // 차트 초기화
+        const ctx = document.getElementById('chart').getContext('2d');
+        const sentimentData = [48, 35, 17, 0]; 
+
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['긍정', '부정', '중립', '기타'],
+                datasets: [{
+                    data: sentimentData,
+                    backgroundColor: ['#00E0C6', '#FF4B4B', '#A0A0A0', '#333333'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%', // 도넛 두께 얇게 (test.html 스타일)
+                plugins: {
+                    legend: { display: false } // 범례는 HTML로 직접 그렸으므로 숨김
+                }
+            }
+        });
+    </script>
 </body>
 </html>
 
