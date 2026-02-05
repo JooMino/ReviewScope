@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReviewScope - AI 리뷰 분석기</title>
+    <link href="/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 ReviewScope</h1>
+        <p style="color: #666; margin-bottom: 2rem;">DC, 클리앙, 퀘이사존, 펨코 리뷰를 한 번에 분석합니다.</p>
+        
+        <form method="post" action="/search" class="search-box">
+            <input type="text" name="keyword" placeholder="제품명이나 키워드 입력 (예: 갤럭시 S25 발열)" required>
+            
+            <div class="site-selection">
+                <h3>📋 분석할 사이트 선택</h3>
+                <label><input type="checkbox" name="sites" value="dc" checked> 🖥️ 디시인사이드</label>
+                <label><input type="checkbox" name="sites" value="clien" checked> 💻 클리앙</label>
+                <label><input type="checkbox" name="sites" value="quasar"> 🎮 퀘이사존</label>
+                <label><input type="checkbox" name="sites" value="fmk"> 🔧 펨코</label>
+            </div>
+            
+            <button type="submit">🚀 분석 시작 (10~30초)</button>
+        </form>
+        
+        <div style="font-size: 14px; color: #666;">
+            <p>💡 팁: 여러 사이트 체크하면 더 정확한 분석!</p>
+        </div>
+    </div>
+</body>
+</html>

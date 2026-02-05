@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>ReviewScope - 결과</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="container">
+
+  <!-- 제목: 실제 키워드 표시 -->
+  <h1>
+    <span th:text="${keyword}">키워드</span> 분석 완료!
+  </h1>
+
+  <!-- 에러가 있으면 에러만 보여줌 -->
+  <div th:if="${error}" class="error" th:text="${error}">에러 메시지</div>
+
+  <!-- 에러가 없을 때 결과 영역 -->
+  <div th:if="${error} == null">
+
+    <!-- 차트 -->
+    <div style="max-width:400px;margin:0 auto 2rem;">
+      <canvas id="chart"></canvas>
+    </div>
+
+	<h2>📄 최신 5개 결과 파일</h2>
+		
+		<div class="file-list">
+			<div class="file-box" th:each="f : ${recentFiles}">
+			  <div class="preview">
+			    <pre th:text="${f.preview}"></pre>
+			  </div>
+			  <div class="meta">
+			    <span th:text="${f.size + '자 | ' + f.date}"></span>
+			  </div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script th:inline="javascript">
+  const ctx = document.getElementById('chart').getContext('2d');
+
+  // 나중에 실제 값으로 교체
+  const sentimentData = [48, 35, 17, 0];
+
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['긍정', '부정', '중립', '기타'],
+      datasets: [{
+        data: sentimentData,
+        backgroundColor: ['#4CAF50', '#F44336', '#FF9800', '#9E9E9E'],
+        borderWidth: 4,
+        borderColor: '#fff'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: /*[[${keyword}]]*/ '키워드' + ' 감성분석',
+          font: { size: 18 }
+        }
+      }
+    }
+  });
+</script>
+</body>
+</html>
+

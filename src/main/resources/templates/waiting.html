@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>ReviewScope - 크롤링 중</title>
+</head>
+<body>
+
+<h2>
+  "<span th:text="${keyword}">키워드</span>" 크롤링 중입니다...
+</h2>
+
+<p>잠시만 기다려 주세요.</p>
+
+<script>
+const keyword = "[[${keyword}]]";
+
+setInterval(() => {
+  fetch(`/api/crawl/status?keyword=${keyword}`)
+    .then(res => {
+      if (!res.ok) throw new Error("status api error");
+      return res.json();
+    })
+    .then(data => {
+      console.log("현재 상태:", data.status);
+      if (data.status === "DONE") {
+        // ✅ 여기서 result.html로 이동
+        window.location.href = "/result?keyword=" + keyword;
+      }
+    })
+    .catch(err => console.error(err));
+}, 2000);
+</script>
+
+</body>
+</html>

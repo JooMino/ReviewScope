@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReviewScope Dark (Modified)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-body: #121212;
+            --bg-card: #1E1E1E;
+            --bg-card-hover: #2C2C2C;
+            --text-main: #FFFFFF;
+            --text-sub: #A0A0A0;
+            --accent: #00E0C6; /* 민트 */
+            --accent-red: #FF4B4B; /* 부정색 */
+            --border: #333333;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: 'Noto Sans KR', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* [1] 좌측 사이드바 */
+        .left-sidebar {
+            width: 250px;
+            background: var(--bg-body);
+            border-right: 1px solid var(--border);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            flex-shrink: 0;
+        }
+
+        .brand { font-size: 24px; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 10px; }
+        .brand span { color: var(--accent); }
+
+        .menu-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+        .menu-item { padding: 12px 15px; border-radius: 12px; color: var(--text-sub); cursor: pointer; font-weight: 500; transition: 0.2s; display: flex; align-items: center; gap: 10px; }
+        .menu-item:hover { background: var(--bg-card); color: var(--text-main); }
+        .menu-item.active { background: var(--bg-card); color: var(--accent); font-weight: 700; }
+
+        /* [2] 중앙 메인 영역 */
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+            min-width: 600px;
+        }
+
+        .top-bar {
+            height: 70px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .feed-area {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            background: #181818;
+        }
+
+        .content-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        /* 중앙 거대 차트 (긍정/부정) */
+        .big-chart-box {
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around; /* 양쪽 정렬 */
+            padding: 0 50px;
+        }
+
+        /* 도넛 차트 CSS 그리기 */
+        .donut-large {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: conic-gradient(
+                var(--accent) 0% 70%, 
+                var(--accent-red) 70% 100%
+            );
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .donut-large::after {
+            content: "70%";
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            background: var(--bg-card);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .chart-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .legend-item { display: flex; align-items: center; gap: 10px; font-size: 16px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+
+        /* 피드 리스트 */
+        .post-card { display: flex; gap: 20px; padding-bottom: 20px; border-bottom: 1px solid #333; margin-bottom: 20px; }
+        .post-card:last-child { border-bottom: none; margin-bottom: 0; }
+        .post-thumb { width: 80px; height: 80px; background: #333; border-radius: 12px; flex-shrink: 0; }
+        .post-info h3 { font-size: 16px; margin-bottom: 5px; }
+        .post-info p { font-size: 13px; color: var(--text-sub); line-height: 1.4; }
+
+        /* [3] 우측 사이드바 */
+        .right-sidebar {
+            width: 320px;
+            background: var(--bg-body);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex-shrink: 0;
+        }
+
+        .widget-card { background: var(--bg-card); border-radius: 16px; padding: 20px; }
+        .widget-title { font-size: 14px; font-weight: 700; color: var(--text-sub); margin-bottom: 15px; display: flex; justify-content: space-between; }
+
+        .rank-list { display: flex; flex-direction: column; gap: 12px; }
+        .rank-item { display: flex; align-items: center; justify-content: space-between; font-size: 14px; }
+        .rank-left { display: flex; align-items: center; gap: 10px; }
+        .model-icon { width: 32px; height: 32px; background: #333; border-radius: 8px; } /* 이미지 대신 박스 */
+        .percent { color: var(--accent); font-weight: bold; }
+
+        /* 워드클라우드 대용 */
+        .keyword-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .tag {
+            background: #252525;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            color: #ccc;
+        }
+        .tag.hot { background: rgba(0, 224, 198, 0.1); color: var(--accent); border: 1px solid var(--accent); }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-body); }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <!-- [1] 좌측 메뉴 -->
+    <nav class="left-sidebar">
+        <div class="brand">Review<span>Scope</span></div>
+        <ul class="menu-list">
+            <li class="menu-item active">🏠 홈 대시보드</li>
+            <li class="menu-item">📊 심층 분석</li>
+            <li class="menu-item">💬 커뮤니티 반응</li>
+            <li class="menu-item">⚙️ 설정</li>
+        </ul>
+    </nav>
+
+    <!-- [2] 중앙 메인 영역 -->
+    <main class="main-container">
+        <header class="top-bar">
+            🔍 &nbsp; 갤럭시 S24 울트라 분석 리포트
+        </header>
+
+        <div class="feed-area">
+            
+            <!-- [메인] 긍정/부정 비율 차트 (위치 변경됨) -->
+            <div class="content-card">
+                <h2 style="margin-bottom: 15px;">😊 긍정 vs 부정 여론 비율</h2>
+                <div class="big-chart-box">
+                    <!-- 왼쪽 차트 -->
+                    <div class="donut-large"></div>
+                    
+                    <!-- 오른쪽 범례 -->
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <div class="dot" style="background: var(--accent);"></div>
+                            <span>긍정적인 의견 (70%)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="dot" style="background: var(--accent-red);"></div>
+                            <span>부정적인 의견 (30%)</span>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 13px; color: #666;">
+                            총 분석 게시글: <strong>1,240건</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 하단 피드 -->
+            <div class="content-card">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                    <h3>🔥 실시간 핫 토픽</h3>
+                    <span style="color: var(--accent); font-size: 13px; cursor: pointer;">더보기 ></span>
+                </div>
+                <div class="post-card">
+                    <div class="post-thumb"></div>
+                    <div class="post-info">
+                        <h3>발열이 생각보다 없네요? (클리앙)</h3>
+                        <p>고사양 게임 돌려봤는데 온도 40도 안 넘습니다.</p>
+                    </div>
+                </div>
+                <div class="post-card">
+                    <div class="post-thumb"></div>
+                    <div class="post-info">
+                        <h3>카메라 셔터랙 아직도 있나요 (디시)</h3>
+                        <p>매장 가서 만져봤는데 전작보다는 나아졌지만...</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- [3] 우측 사이드바 -->
+    <aside class="right-sidebar">
+        
+        <!-- 위젯 1: 함께 많이 언급된 모델 (수정됨) -->
+        <div class="widget-card">
+            <div class="widget-title">
+                <span>📱 함께 많이 언급된 모델</span>
+            </div>
+            <div class="rank-list">
+                <div class="rank-item">
+                    <div class="rank-left">
+                        <div class="model-icon"></div>
+                        <span>아이폰 15 Pro</span>
+                    </div>
+                    <span class="percent">42%</span>
+                </div>
+                <div class="rank-item">
+                    <div class="rank-left">
+                        <div class="model-icon"></div>
+                        <span>갤럭시 S23 울트라</span>
+                    </div>
+                    <span class="percent">28%</span>
+                </div>
+                <div class="rank-item">
+                    <div class="rank-left">
+                        <div class="model-icon"></div>
+                        <span>샤오미 14</span>
+                    </div>
+                    <span class="percent">15%</span>
+                </div>
+                <div class="rank-item">
+                    <div class="rank-left">
+                        <div class="model-icon"></div>
+                        <span>픽셀 8</span>
+                    </div>
+                    <span class="percent">9%</span>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- 위젯 3: 배너 -->
+        <div class="widget-card" style="background: linear-gradient(45deg, #00E0C6, #0078FF); color: white; text-align: center;">
+            <h3 style="font-size: 16px;">ReviewScope<br>Pro</h3>
+            <p style="font-size: 12px; margin-top: 5px; opacity: 0.9;">더 강력한 인사이트를<br>경험해보세요.</p>
+        </div>
+
+    </aside>
+
+</body>
+</html>
