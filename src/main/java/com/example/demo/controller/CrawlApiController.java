@@ -31,8 +31,8 @@ public class CrawlApiController {
         CrawlJob job = crawlQueue.get(request.getKeyword());
         if (job != null) {
             job.setStatus(CrawlJob.Status.DONE);
-            job.setResults(request.getResults()); 
             System.out.println("데이터 수신 완료: " + request.getResults().size() + "건");
+            job.setResults(request.getResults()); 
         }
     }
     @GetMapping("/status")
