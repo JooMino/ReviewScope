@@ -1,12 +1,17 @@
 package com.example.demo.crawl;
+import java.util.List;
+
+import com.example.demo.util.ReviewDto;
 
 public class CrawlJob {
+    private String keyword;
+    private String[] sites;
 
+    private List<ReviewDto> results; 
     public enum Status {
         PENDING, RUNNING, DONE
     }
 
-    private final String keyword;
     private Status status = Status.RUNNING; 
 
     public CrawlJob(String keyword, String[] sites) {
@@ -25,10 +30,14 @@ public class CrawlJob {
     public void setStatus(Status status) {
         this.status = status;
     }
-    private String[] sites;
 
     public String[] getSites() {
         return sites;
     }
-
+    public List<ReviewDto> getResults() { 
+        return results; 
+    }
+    public void setResults(List<ReviewDto> results) {
+        this.results = results; 
+    }
 }

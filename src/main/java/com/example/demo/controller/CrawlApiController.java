@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/crawl")
+
 public class CrawlApiController {
 
     private final CrawlQueue crawlQueue;
@@ -26,9 +27,13 @@ public class CrawlApiController {
     }
     
     // 경로 수정: /api/crawl/done
-    @PostMapping("/done") 
-    public void done(@RequestParam("keyword") String keyword) {
-        crawlQueue.markDone(keyword);
+    @PostMapping("/done")
+    public void completeJob(@RequestBody CrawlResultRequest request) {
+        CrawlJob job = crawlQueue.get(request.getKeyword());
+        if (job != null) {
+            job.setStatus(CrawlJob.Status.DONE);
+            job.setResults(request.getResults()); // <--- 서버 메모리에 결과 저장!
+        }
     }
 
     @GetMapping("/status")
