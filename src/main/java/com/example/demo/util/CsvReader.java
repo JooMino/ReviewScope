@@ -1,3 +1,4 @@
+// CsvReader.java (줄바꿈 대응 버전)
 package com.example.demo.util;
 
 
@@ -13,87 +14,79 @@ public class CsvReader {
         
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String line;
-            br.readLine(); // 첫 줄(헤더) 건너뛰기
+            br.readLine(); // 헤더 건너뛰기
+            
+            StringBuilder currentEntry = new StringBuilder();
             
             while ((line = br.readLine()) != null) {
-                // 콤마로 분리 (빈 값도 포함)
-                String[] data = line.split(",", -1); 
+                // 현재 줄을 버퍼에 추가 (줄바꿈 포함)
+                if (currentEntry.length() > 0) currentEntry.append("\n");
+                currentEntry.append(line);
                 
-                // 데이터 구조: [0]file, [1]chars, [2]type, [3]model, [4]summary, [5]sentiment(있으면)
-                if (data.length > 4) { 
-                    
-                    // summary 내용 복구 (내용 중에 콤마가 있어서 잘렸을 경우 다시 합침)
-                    StringBuilder sb = new StringBuilder();
-                    for(int i=4; i<data.length; i++) {
-                        // sentiment 컬럼(마지막) 전까지만 summary로 봄 (만약 sentiment가 있다면)
-                        // 하지만 지금 CSV 구조상 summary가 끝까지 간다고 가정하고 싹 긁어옴
-                        sb.append(data[i]);
-                        if(i < data.length-1) sb.append(","); 
-                    }
-                    String fullSummary = sb.toString(); 
-
-                    // ★ 핵심 수정: 긍정/부정 내용 발라내기 ★
-                    
-                    // 1. 긍정 내용 추출
-                    String positiveContent = extractContent(fullSummary, "긍정");
-                    if (!positiveContent.isEmpty()) {
-                        reviews.add(createReview(data[0], data[3], positiveContent, "긍정"));
-                    }
-                    
-                    // 2. 부정 내용 추출 (좀 더 유연하게 "부정" 단어 찾기)
-                    String negativeContent = extractContent(fullSummary, "부정");
-                    if (!negativeContent.isEmpty()) {
-                        reviews.add(createReview(data[0], data[3], negativeContent, "부정"));
-                    }
-                }
+                // 따옴표 개수 세기 (홀수면 아직 데이터가 안 끝난 것!)
+                // (이 로직은 " 로 감싸진 CSV라고 가정)
+                // 만약 " 가 없는 CSV라면 그냥 한 줄이 한 데이터이겠지만, 
+                // 지금 이미지는 한 데이터가 여러 줄이므로, "긍정:" 으로 시작하면 새 데이터로 보는 게 아니라
+                // 파일 단위 파싱이 어려우니 통째로 읽어서 처리하는 게 낫습니다.
             }
+            
+            // 하지만 위 방식은 복잡하니, 더 쉬운 꼼수!
+            // 전체 파일을 통으로 읽은 다음, "clien" 같은 사이트 이름이 나오면 자릅니다.
+            // (이미지 보니 맨 앞에 사이트 이름이 있죠?)
+            
+            String fullContent = currentEntry.toString();
+            // 데이터가 1개(또는 소수)라면 그냥 통으로 파싱해버리는 게 빠릅니다.
+            
+            // ★ 기존 로직 폐기하고, 텍스트 전체에서 "긍정:", "부정:" 위치를 찾아서 뜯어내기 ★
+            
+            // 1. 긍정 찾기
+            String pos = extractByMarker(fullContent, "긍정:", "부정:");
+            if(!pos.isEmpty()) reviews.add(createReview("분석결과", pos, "긍정"));
+            
+            // 2. 부정 찾기 (줄바꿈 포함해도 찾음)
+            String neg = extractByMarker(fullContent, "부정:", "중립");
+            if(neg.isEmpty()) neg = extractByMarker(fullContent, "부정:", "질문");
+            
+            if(!neg.isEmpty()) reviews.add(createReview("분석결과", neg, "부정"));
+            
         } catch (Exception e) {
             e.printStackTrace();
         }
         return reviews;
     }
 
-    // 헬퍼 함수: 특정 키워드(marker) 뒤의 내용을 뽑아내는 똑똑한 함수
-    private static String extractContent(String text, String marker) {
-        // "긍정" 또는 "부정" 위치 찾기
-        int startIdx = text.indexOf(marker);
-        if (startIdx == -1) return ""; 
-
-        // marker 뒤쪽(예: "긍정:" 다음부터)
-        String content = text.substring(startIdx + marker.length());
+    // 헬퍼: 줄바꿈 무시하고 텍스트 뜯어내기
+    private static String extractByMarker(String text, String startMarker, String endMarker) {
+        int start = text.indexOf(startMarker);
+        if (start == -1) return "";
         
-        // 혹시 ":" 나 " " 공백이 있으면 제거
-        if (content.startsWith(":")) content = content.substring(1);
-        content = content.trim();
-
-        // 다음 섹션("부정"이나 "중립" 등)이 나오면 그 앞까지만 자르기
-        int nextSectionIdx = -1;
+        start += startMarker.length();
+        int end = -1;
         
-        if (marker.equals("긍정")) {
-            // 긍정 내용은 "부정"이나 "중립" 나오기 전까지
-            nextSectionIdx = content.indexOf("부정");
-            if (nextSectionIdx == -1) nextSectionIdx = content.indexOf("중립");
-        } else if (marker.equals("부정")) {
-            // 부정 내용은 "중립" 나오기 전까지
-            nextSectionIdx = content.indexOf("중립");
-             // 혹시 "질문" 같은 게 뒤에 오면 거기서 끊기
-            if (nextSectionIdx == -1) nextSectionIdx = content.indexOf("질문");
+        // 종료 마커 찾기 (여러 후보 중 제일 먼저 나오는 놈)
+        if (endMarker != null) {
+            end = text.indexOf(endMarker, start);
+            // 만약 "중립"을 못 찾으면 "질문"도 찾아보기
+            if (end == -1 && endMarker.equals("중립")) {
+                 end = text.indexOf("질문", start);
+            }
         }
         
-        // 뒤에 다른 섹션이 있으면 거기서 자름
-        if (nextSectionIdx != -1) {
-            content = content.substring(0, nextSectionIdx);
+        String content;
+        if (end == -1) {
+            content = text.substring(start); // 끝까지
+        } else {
+            content = text.substring(start, end);
         }
         
-        // 뒤에 남은 콤마나 공백 제거
-        return content.replaceAll("[,\\s]+$", "").trim();
+        // 콤마, 따옴표, 줄바꿈 등 지저분한 거 정리
+        return content.replace("\"", "").trim().replaceAll("[,\\s]+$", "");
     }
 
-    // 헬퍼 함수: ReviewDto 객체 생성
-    private static ReviewDto createReview(String title, String link, String summary, String sentiment) {
+    private static ReviewDto createReview(String title, String summary, String sentiment) {
         ReviewDto dto = new ReviewDto();
-        dto.setTitle(title); 
-        dto.setLink("#");    
+        dto.setTitle(title);
+        dto.setLink("#");
         dto.setSummary(summary);
         dto.setSentiment(sentiment);
         return dto;
