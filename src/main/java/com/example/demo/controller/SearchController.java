@@ -77,13 +77,13 @@ public class SearchController {
         // 3. 긍정 리뷰 3개 추출
         List<ReviewDto> positiveReviews = allReviews.stream()
                 .filter(r -> "긍정".equals(r.getSentiment()))
-                .limit(3)
+                .limit(300)
                 .collect(Collectors.toList());
 
         // 4. 부정 리뷰 3개 추출
         List<ReviewDto> negativeReviews = allReviews.stream()
                 .filter(r -> "부정".equals(r.getSentiment()))
-                .limit(3)
+                .limit(300)
                 .collect(Collectors.toList());
 
         // 5. 데이터를 모델에 담아서 HTML로 전달

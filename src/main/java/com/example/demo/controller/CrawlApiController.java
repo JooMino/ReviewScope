@@ -29,14 +29,14 @@ public class CrawlApiController {
     }
     
     @PostMapping("/done")
-            return ResponseEntity.ok("Done & Saved");
-            saveResultToCsv(request.getKeyword(), request.getResults());         
-            // ★★★ 추가: 받은 데이터를 CSV 파일로 저장하는 코드 ★★★
+    public ResponseEntity<String> completeCrawl(@RequestBody CrawlResultRequest request) {
+        CrawlJob job = crawlQueue.get(request.getKeyword());
+        if (job != null) {
             job.setStatus(CrawlJob.Status.DONE);
             
-        if (job != null) {
-        CrawlJob job = crawlQueue.get(request.getKeyword());
-    public ResponseEntity<String> completeCrawl(@RequestBody CrawlResultRequest request) {
+            // ★★★ 추가: 받은 데이터를 CSV 파일로 저장하는 코드 ★★★
+            saveResultToCsv(request.getKeyword(), request.getResults());         
+            return ResponseEntity.ok("Done & Saved");
         }
         return ResponseEntity.status(404).body("Job not found");
     }
