@@ -1,4 +1,3 @@
-// CsvReader.java (줄바꿈 대응 버전)
 package com.example.demo.util;
 
 
@@ -14,81 +13,79 @@ public class CsvReader {
         
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String line;
-            br.readLine(); // 헤더 건너뛰기
+            StringBuilder currentContent = new StringBuilder();
+            String currentType = null; // "긍정" or "부정"
             
-            StringBuilder currentEntry = new StringBuilder();
-            
+            // 첫 줄(헤더)은 건너뛰기 (단, 헤더가 확실히 있는지 확인 필요)
+            // 만약 첫 줄부터 데이터라면 아래 br.readLine() 지우세요.
+            br.readLine(); 
+
             while ((line = br.readLine()) != null) {
-                // 현재 줄을 버퍼에 추가 (줄바꿈 포함)
-                if (currentEntry.length() > 0) currentEntry.append("\n");
-                currentEntry.append(line);
-                
-                // 따옴표 개수 세기 (홀수면 아직 데이터가 안 끝난 것!)
-                // (이 로직은 " 로 감싸진 CSV라고 가정)
-                // 만약 " 가 없는 CSV라면 그냥 한 줄이 한 데이터이겠지만, 
-                // 지금 이미지는 한 데이터가 여러 줄이므로, "긍정:" 으로 시작하면 새 데이터로 보는 게 아니라
-                // 파일 단위 파싱이 어려우니 통째로 읽어서 처리하는 게 낫습니다.
+                line = line.trim();
+                if (line.isEmpty()) continue;
+
+                // 1. "긍정:" 시작 라인 발견
+                if (line.startsWith("긍정:") || line.startsWith("긍정 :")) {
+                    // 이전에 담고 있던 게 있으면 저장
+                    saveReview(reviews, currentType, currentContent);
+                    
+                    // 새 긍정 시작
+                    currentType = "긍정";
+                    currentContent.setLength(0); // 버퍼 초기화
+                    currentContent.append(removePrefix(line, "긍정"));
+                }
+                // 2. "부정:" 시작 라인 발견
+                else if (line.startsWith("부정:") || line.startsWith("부정 :")) {
+                    // 이전에 담고 있던 게 있으면 저장
+                    saveReview(reviews, currentType, currentContent);
+                    
+                    // 새 부정 시작
+                    currentType = "부정";
+                    currentContent.setLength(0);
+                    currentContent.append(removePrefix(line, "부정"));
+                }
+                // 3. "중립"이나 "질문"이 나오면 -> 이전 내용 저장하고 끊기
+                else if (line.startsWith("중립") || line.startsWith("질문")) {
+                    saveReview(reviews, currentType, currentContent);
+                    currentType = null; // 중립은 저장 안 함 (필요하면 여기서 "중립" 처리)
+                }
+                // 4. 그냥 내용이 이어지는 줄 (멀티라인)
+                else {
+                    if (currentType != null) {
+                        currentContent.append("\n").append(line);
+                    }
+                }
             }
-            
-            // 하지만 위 방식은 복잡하니, 더 쉬운 꼼수!
-            // 전체 파일을 통으로 읽은 다음, "clien" 같은 사이트 이름이 나오면 자릅니다.
-            // (이미지 보니 맨 앞에 사이트 이름이 있죠?)
-            
-            String fullContent = currentEntry.toString();
-            // 데이터가 1개(또는 소수)라면 그냥 통으로 파싱해버리는 게 빠릅니다.
-            
-            // ★ 기존 로직 폐기하고, 텍스트 전체에서 "긍정:", "부정:" 위치를 찾아서 뜯어내기 ★
-            
-            // 1. 긍정 찾기
-            String pos = extractByMarker(fullContent, "긍정:", "부정:");
-            if(!pos.isEmpty()) reviews.add(createReview("분석결과", pos, "긍정"));
-            
-            // 2. 부정 찾기 (줄바꿈 포함해도 찾음)
-            String neg = extractByMarker(fullContent, "부정:", "중립");
-            if(neg.isEmpty()) neg = extractByMarker(fullContent, "부정:", "질문");
-            
-            if(!neg.isEmpty()) reviews.add(createReview("분석결과", neg, "부정"));
-            
+            // 마지막에 남은 데이터 저장
+            saveReview(reviews, currentType, currentContent);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
         return reviews;
     }
 
-    // 헬퍼: 줄바꿈 무시하고 텍스트 뜯어내기
-    private static String extractByMarker(String text, String startMarker, String endMarker) {
-        int start = text.indexOf(startMarker);
-        if (start == -1) return "";
-        
-        start += startMarker.length();
-        int end = -1;
-        
-        // 종료 마커 찾기 (여러 후보 중 제일 먼저 나오는 놈)
-        if (endMarker != null) {
-            end = text.indexOf(endMarker, start);
-            // 만약 "중립"을 못 찾으면 "질문"도 찾아보기
-            if (end == -1 && endMarker.equals("중립")) {
-                 end = text.indexOf("질문", start);
-            }
+    // 리뷰 리스트에 추가하는 함수
+    private static void saveReview(List<ReviewDto> reviews, String type, StringBuilder content) {
+        if (type != null && content.length() > 0) {
+            ReviewDto dto = new ReviewDto();
+            dto.setTitle("분석결과"); // 제목은 고정 (CSV에 제목이 따로 없다면)
+            dto.setLink("#");
+            dto.setSummary(content.toString().trim());
+            dto.setSentiment(type);
+            reviews.add(dto);
         }
-        
-        String content;
-        if (end == -1) {
-            content = text.substring(start); // 끝까지
-        } else {
-            content = text.substring(start, end);
-        }
-        
-        // 콤마, 따옴표, 줄바꿈 등 지저분한 거 정리
-        return content.replace("\"", "").trim().replaceAll("[,\\s]+$", "");
     }
 
-    private static ReviewDto createReview(String title, String summary, String sentiment) {
-        ReviewDto dto = new ReviewDto();
-        dto.setTitle(title);
-        dto.setLink("#");
-        dto.setSummary(summary);
-        dto.setSentiment(sentiment);
-        return dto;
+    // "긍정:" 같은 앞부분 떼어내는 함수
+    private static String removePrefix(String text, String prefix) {
+        int idx = text.indexOf(prefix);
+        if (idx == -1) return text;
+        
+        String clean = text.substring(idx + prefix.length());
+        if (clean.startsWith(":") || clean.startsWith(" :")) {
+            clean = clean.replaceFirst("^[:\\s]+", "");
+        }
+        return clean.trim();
     }
 }
