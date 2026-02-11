@@ -14,45 +14,59 @@ public class MdReportParser {
         Map<String, String> sections = new HashMap<>();
         
         try {
-            // 1. 파일 읽기
             String content = Files.readString(Path.of(filePath));
             
-            // 2. 섹션별 파싱 (정규표현식 활용)
-            // (1) 장점 (pros) 찾기
-            // "장점" 또는 "Pros" 라는 단어가 포함된 헤더부터 ~ 다음 헤더 전까지
-            sections.put("pros", extractSection(content, "(장점|Pros)"));
-
-            // (2) 단점 (cons) 찾기
-            sections.put("cons", extractSection(content, "(단점|Cons)"));
-
-            // (3) 함께 언급된 모델 (models)
-            sections.put("models", extractSection(content, "(함께 언급된 모델|Related Models)"));
-
-            // (4) 전체 내용 (fallback용)
-            sections.put("fullContent", content);
+            // 1. 전체 내용 저장 (디버깅용)
+            sections.put("summary", content); // 일단 전체를 summary에 넣어둠 (못 찾을 경우 대비)
+            
+            // 2. 패턴별 추출
+            // (1) 장점: "- **장점**:" 부터 다음 불릿(-) 전까지
+            sections.put("pros", extractListSection(content, "장점"));
+            
+            // (2) 단점: "- **단점**:" 부터 다음 불릿(-) 전까지
+            sections.put("cons", extractListSection(content, "단점"));
+            
+            // (3) 모델: "함께 언급된 모델" 섹션 (이건 헤더일 수도 있음)
+            // 헤더 방식(####)과 리스트 방식 둘 다 시도
+            String models = extractSectionByHeader(content, "함께 언급된 모델");
+            if (models.isEmpty()) {
+                models = extractListSection(content, "함께 언급된 모델");
+            }
+            sections.put("models", models);
 
         } catch (IOException e) {
             e.printStackTrace();
-            sections.put("error", "파일을 읽을 수 없습니다.");
         }
         
         return sections;
     }
 
-    // 특정 키워드가 포함된 헤더(### 키워드)부터 다음 헤더(#) 전까지 추출하는 메서드
-    private static String extractSection(String content, String keywordPattern) {
+    // [버전 2] 리스트 아이템 추출기 (- **키워드**: 내용...)
+    private static String extractListSection(String content, String keyword) {
         // 정규식 설명:
-        // ###.*?패턴.*?\n  -> '###'으로 시작하고 패턴을 포함하는 줄 찾기
-        // ([\s\S]*?)       -> 그 아래 내용 캡처 (줄바꿈 포함)
-        // (?=###|$)        -> 다음 '###' 헤더가 나오거나 파일 끝($)이 나올 때까지
+        // -\s*\*\*{keyword}\*\*:\s*  -> "- **키워드**:" 패턴 찾기 (공백 유연하게)
+        // ([\s\S]*?)                 -> 내용 캡처
+        // (?=\n\s*-\s*\*\*|$)        -> 다음 "- **..." 패턴이 나오거나 파일 끝까지
         
-        String regex = "(?m)^#{1,3}\\s.*?" + keywordPattern + ".*\\n([\\s\\S]*?)(?=(^#{1,3}\\s)|$)";
+        String regex = "-\\s*\\*\\*" + keyword + "\\*\\*:\\s*([\\s\\S]*?)(?=\\n\\s*-\\s*\\*\\*|$)";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(content);
 
         if (matcher.find()) {
-            return matcher.group(1).trim(); // 내용만 반환
+            return matcher.group(1).trim();
         }
-        return ""; // 못 찾으면 빈 문자열
+        return ""; // 못 찾음
+    }
+    
+    // [버전 1] 헤더 추출기 (### 키워드) - 기존 로직
+    private static String extractSectionByHeader(String content, String keyword) {
+        String regex = "(?m)^#{1,4}\\s.*?" + keyword + ".*\\n([\\s\\S]*?)(?=(^#{1,4}\\s)|$)";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(content);
+
+        if (matcher.find()) {
+            return matcher.group(1).trim();
+        }
+        return "";
     }
 }
