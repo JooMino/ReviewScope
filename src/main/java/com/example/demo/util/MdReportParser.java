@@ -5,8 +5,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class MdReportParser {
 
@@ -15,17 +13,20 @@ public class MdReportParser {
         
         try {
             String content = Files.readString(Path.of(filePath));
-            sections.put("summary", content); // 전체 내용
             
-            // ★ 구조 기반 추출
-            // 1. 장점: "- **장점**:" (또는 "장점:") 라인부터 ~ 다음 구조(- **...**: 또는 #### ...) 전까지
-            sections.put("pros", extractStructSection(content, "장점"));
+            // 1. 전체 내용
+            sections.put("summary", content);
             
-            // 2. 단점: "- **단점**:" (또는 "단점:") 라인부터 ~ 다음 구조 전까지
-            sections.put("cons", extractStructSection(content, "단점"));
+            // 2. 단순 문자열 검색으로 추출
+            sections.put("pros", extractByKeyword(content, "- **장점**:"));
+            sections.put("cons", extractByKeyword(content, "- **단점**:"));
             
-            // 3. 모델: "#### 함께 언급된 모델" (또는 "- **함께...**") 부터 ~ 다음 구조 전까지
-            sections.put("models", extractStructSection(content, "함께 언급된 모델"));
+            // 모델 섹션은 헤더(####)일 수도 있고 리스트(- **)일 수도 있음 -> 둘 다 시도
+            String models = extractByKeyword(content, "#### 함께 언급된 모델");
+            if (models.isEmpty()) {
+                models = extractByKeyword(content, "- **함께 언급된 모델");
+            }
+            sections.put("models", models);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -35,45 +36,47 @@ public class MdReportParser {
         return sections;
     }
 
-    private static String extractStructSection(String content, String keyword) {
-        // [1] 시작 패턴 정의 (엄격하게)
-        // - **키워드**:  (가장 흔함)
-        // #### 키워드    (모델 섹션 등)
-        // ### 키워드
-        String startRegex = "(?m)^\\s*(- \\*\\*|#{3,4} )" + keyword + ".*$";
-        Pattern startPattern = Pattern.compile(startRegex);
-        Matcher startMatcher = startPattern.matcher(content);
-
-        if (!startMatcher.find()) {
-            return "정보 없음";
+    private static String extractByKeyword(String content, String startKeyword) {
+        // 1. 시작 키워드 위치 찾기
+        int startIndex = content.indexOf(startKeyword);
+        if (startIndex == -1) {
+            return ""; // 못 찾음
         }
 
-        int contentStart = startMatcher.end(); // 키워드 라인 끝에서 시작
-
-        // [2] 종료 패턴 정의 (다음 섹션의 시작부)
-        // 다음 섹션의 특징:
-        // 1. 줄 시작이 "- **...**:" 형태 (다른 주요 항목)
-        // 2. 줄 시작이 "###..." 또는 "####..." 형태 (헤더)
-        // 3. 줄 시작이 "##..." 형태 (큰 헤더)
-        String endRegex = "(?m)^\\s*(- \\*\\*.*\\*\\*:|#{2,4} ).*$";
+        // 본문 시작점: 키워드 길이만큼 뒤로 이동 (예: "- **장점**:" 뒤부터 읽어야 하니까)
+        int contentStart = startIndex + startKeyword.length();
         
-        Pattern endPattern = Pattern.compile(endRegex);
-        Matcher endMatcher = endPattern.matcher(content);
-        
-        int bestEndIndex = content.length(); // 못 찾으면 파일 끝까지
+        // 2. 끝점 찾기 (다음 섹션 후보들 중 가장 가까운 것)
+        String[] endMarkers = {
+            "- **단점**:", 
+            "- **함께 언급된 모델", 
+            "#### 함께 언급된 모델", 
+            "#### QCY", // 다른 헤더들 예시
+            "### 2.", 
+            "### 3.",
+            "## 결론",
+            "## 본론" 
+        };
 
-        // contentStart 이후에 나오는 첫 번째 '구조적 헤더'를 찾음
-        while (endMatcher.find()) {
-            if (endMatcher.start() > contentStart) {
-                bestEndIndex = endMatcher.start();
-                break; // 가장 가까운 다음 헤더를 찾았으면 중단
+        int bestEndIndex = content.length();
+        
+        for (String marker : endMarkers) {
+            // 현재 찾으려는 키워드와 똑같은 건 건너뜀 (장점 찾는데 장점에서 멈추면 안 됨)
+            if (marker.equals(startKeyword)) continue;
+            
+            // contentStart 이후에 나오는 마커를 찾음
+            int foundIndex = content.indexOf(marker, contentStart);
+            if (foundIndex != -1 && foundIndex < bestEndIndex) {
+                bestEndIndex = foundIndex;
             }
         }
         
-        // [3] 추출 및 다듬기
+        // 3. 자르기 & 공백 정리
         if (contentStart >= bestEndIndex) return "";
         
+        // 앞뒤 공백 및 줄바꿈 제거
         return content.substring(contentStart, bestEndIndex).trim();
     }
 }
+
 
