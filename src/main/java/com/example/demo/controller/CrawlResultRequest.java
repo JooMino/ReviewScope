@@ -1,13 +1,12 @@
-package com.example.demo.controller; // 패키지 확인
+package com.example.demo.controller; 
 
 import com.example.demo.util.ReviewDto;
 import java.util.List;
 
 public class CrawlResultRequest {
     private String keyword;
-    private List<ReviewDto> results; // 파이썬에서 보낼 JSON 키 이름과 같아야 함
+    private List<ReviewDto> results; 
 
-    // Getter & Setter (필수!)
     public String getKeyword() { return keyword; }
     public void setKeyword(String keyword) { this.keyword = keyword; }
 

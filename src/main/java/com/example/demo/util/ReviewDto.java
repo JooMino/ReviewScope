@@ -9,7 +9,7 @@ public class ReviewDto {
     // 기본 생성자
     public ReviewDto() {}
 
-    // Getter & Setter (이거 있어야 HTML에서 읽을 수 있음)
+    // Getter & Setter 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
 
