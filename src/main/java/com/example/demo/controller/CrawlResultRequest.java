@@ -1,24 +1,24 @@
 package com.example.demo.controller; 
 
-import com.example.demo.util.ReviewDto;
-import java.util.List;
+// ReviewDto import 제거
 
 public class CrawlResultRequest {
     private String keyword;
-    private List<ReviewDto> results;
     
-    // ★★★ [추가] 실패/성공 상태와 에러 메시지를 받을 변수
-    private String status;       
-    private String errorMessage; 
+    // results 필드 삭제함 (파이썬에서도 results: [] 보내지만, 여기서 안 받으면 무시됨. OK)
+    
+    // 핵심 필드들
+    private String reportContent; // MD 내용
+    private String status;        // SUCCESS / FAIL
+    private String errorMessage;
 
-    // 기존 Getter/Setter
+    // Getter & Setter
     public String getKeyword() { return keyword; }
     public void setKeyword(String keyword) { this.keyword = keyword; }
 
-    public List<ReviewDto> getResults() { return results; }
-    public void setResults(List<ReviewDto> results) { this.results = results; }
+    public String getReportContent() { return reportContent; }
+    public void setReportContent(String reportContent) { this.reportContent = reportContent; }
 
-    // ★★★ [추가] 새로 만든 변수의 Getter/Setter
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 

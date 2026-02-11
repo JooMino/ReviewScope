@@ -2,17 +2,15 @@ package com.example.demo.controller;
 
 import com.example.demo.crawl.CrawlQueue;
 import com.example.demo.crawl.CrawlJob;
-import com.example.demo.util.ReviewDto;
-import com.example.demo.util.CsvReader;
+import com.example.demo.util.MdReportParser;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.io.File;
+import java.util.Map;
 
 @Controller
 public class SearchController {
@@ -36,19 +34,18 @@ public class SearchController {
             @RequestParam(value = "sites", required = false) String[] sites,
             Model model
     ) {
-        // 사이트 선택이 없으면 기본값 설정 (디시, 클리앙, 펨코, 퀘이사존)
         if (sites == null || sites.length == 0) {
             sites = new String[]{"dc", "clien", "fmk", "quasar"};
         }
 
-        // 큐에 작업 등록 (나중에 Python이 가져감)
+        // 큐에 작업 등록
         crawlQueue.add(keyword, sites);
 
         model.addAttribute("keyword", keyword);
         return "waiting";   // 대기 화면으로 이동
     }
     
-    // 결과 페이지 (대기 화면에서 주기적으로 호출하거나 새로고침 시)
+    // 결과 페이지
     @GetMapping("/result")
     public String result(
             @RequestParam("keyword") String keyword,
@@ -56,42 +53,49 @@ public class SearchController {
     ) {
         CrawlJob job = crawlQueue.get(keyword);
 
-        // 1. 작업이 없거나 아직 진행 중이면 계속 대기
-        if (job == null || job.getStatus() != CrawlJob.Status.DONE) {
+        // 1. 작업 진행 중 or 실패 체크
+        if (job == null) {
+            model.addAttribute("keyword", keyword);
+            return "waiting";
+        }
+        
+        // 실패했다면 에러 페이지나 알림을 띄울 수도 있음 (여기선 일단 대기로 처리하거나 분기 가능)
+        if (job.getStatus() == CrawlJob.Status.FAILED) {
+             model.addAttribute("error", "분석 작업이 실패했습니다.");
+             return "index"; // 메인으로 튕기기
+        }
+
+        if (job.getStatus() != CrawlJob.Status.DONE) {
             model.addAttribute("keyword", keyword);
             return "waiting";
         }
 
         // 2. 작업 완료됨! (Status.DONE)
-        // Python이 저장한 CSV 파일 경로 (Python의 저장 로직과 맞춰야 함)
-        // 예: 프로젝트 루트 기준 data_storage/키워드/result.csv 라고 가정
-        // ⚠️ 실제 파일 경로가 다르면 수정 필요!
-        String filePath = "data_storage/" + keyword + "/result.csv"; 
-        // 만약 파일이 없다면 예외처리나 빈 리스트가 반환됨
+        // 이제 CSV가 아니라 MD 파일을 읽습니다.
+        // 저장 경로: data_storage/키워드/키워드_report.md
+        String filePath = "data_storage/" + keyword + "/" + keyword + "_report.md";
         
-        List<ReviewDto> allReviews = CsvReader.readReviews(filePath);
-        if (allReviews == null) {
-            allReviews = new ArrayList<>();
+        File file = new File(filePath);
+        if (!file.exists()) {
+            // 완료는 됐는데 파일이 없다? -> 에러 처리
+            model.addAttribute("error", "리포트 파일이 없습니다.");
+            return "index";
         }
 
-        // 3. 긍정 리뷰 3개 추출
-        List<ReviewDto> positiveReviews = allReviews.stream()
-                .filter(r -> "긍정".equals(r.getSentiment()))
-                .limit(300)
-                .collect(Collectors.toList());
+        // 3. MD 파서로 내용 쪼개기
+        Map<String, String> reportData = MdReportParser.parseReport(filePath);
 
-        // 4. 부정 리뷰 3개 추출
-        List<ReviewDto> negativeReviews = allReviews.stream()
-                .filter(r -> "부정".equals(r.getSentiment()))
-                .limit(300)
-                .collect(Collectors.toList());
-
-        // 5. 데이터를 모델에 담아서 HTML로 전달
+        // 4. HTML로 데이터 전달
+        // 맵에 담긴 pros, cons, models, fullContent 등을 모델에 추가
         model.addAttribute("keyword", keyword);
-        model.addAttribute("positives", positiveReviews);
-        model.addAttribute("negatives", negativeReviews);
-        model.addAttribute("totalCount", allReviews.size()); // 전체 개수
+        model.addAttribute("pros", reportData.getOrDefault("pros", "내용 없음"));
+        model.addAttribute("cons", reportData.getOrDefault("cons", "내용 없음"));
+        model.addAttribute("models", reportData.getOrDefault("models", "내용 없음"));
+        model.addAttribute("summary", reportData.getOrDefault("summary", "내용 없음")); // 요약이나 전체 내용
 
-        return "result"; // result.html 보여줌
+        // 필요하다면 원본 전체도 보냄
+        // model.addAttribute("fullReport", reportData.get("fullContent"));
+
+        return "result"; // result.html (수정 필요)
     }
 }
