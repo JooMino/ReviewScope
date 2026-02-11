@@ -9,7 +9,7 @@ public class CrawlJob {
 
     private List<ReviewDto> results; 
     public enum Status {
-        PENDING, RUNNING, DONE
+        PENDING, RUNNING, DONE,FAILED
     }
 
     private Status status = Status.RUNNING; 

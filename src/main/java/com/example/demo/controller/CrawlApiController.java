@@ -34,13 +34,27 @@ public class CrawlApiController {
     @PostMapping("/done")
     public ResponseEntity<String> completeCrawl(@RequestBody CrawlResultRequest request) {
         CrawlJob job = crawlQueue.get(request.getKeyword());
+        
         if (job != null) {
+            // 1. 실패(FAIL)로 온 경우
+            if ("FAIL".equalsIgnoreCase(request.getStatus())) {
+                // 이제 FAILED를 사용할 수 있습니다
+                job.setStatus(CrawlJob.Status.FAILED);
+                System.out.println("❌ 실패 처리됨: " + request.getKeyword() + " (" + request.getErrorMessage() + ")");
+                return ResponseEntity.ok("Marked as FAILED");
+            }
+
+            // 2. 성공(SUCCESS)인 경우
             job.setStatus(CrawlJob.Status.DONE);
             
-            // ★★★ 변경: CSV 대신 Markdown으로 저장 ★★★
-            saveResultToMarkdown(request.getKeyword(), request.getResults());         
+            // 결과 저장 로직 실행
+            if (request.getResults() != null) {
+                 saveResultToMarkdown(request.getKeyword(), request.getResults());
+            }
+            
             return ResponseEntity.ok("Done & Saved (MD)");
         }
+        
         return ResponseEntity.status(404).body("Job not found");
     }
     
