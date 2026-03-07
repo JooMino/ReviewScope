@@ -150,6 +150,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 4. 화면에 데이터 그리기
 	function renderResult(data) {
+		const resultTitleEl = document.querySelector('.result-title');
+	    if (resultTitleEl && data.keyword) {
+	        resultTitleEl.innerHTML = `<span style="color: var(--accent);">'${data.keyword}'</span> 분석 결과 미리보기`;
+	    }
 	    // 1. 기호를 지우는 간단한 함수 (에러 안 나게 방어막 침)
 	    const clean = (text) => {
 	        if (!text || typeof text !== 'string') return text;
