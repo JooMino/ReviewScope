@@ -32,7 +32,6 @@ public class SearchController {
     @GetMapping("/analyze")
     public String analyzePage() {
         return "analy"; // templates/analy.html
-<<<<<<< HEAD
     }
 
 
@@ -65,51 +64,4 @@ public class SearchController {
 	         "cons", reportData.getOrDefault("cons", "").lines().toList()
 	     );
 	 }
-=======
-    }
-
-
-    // 분석 요청 처리 (analy.html에서 폼 전송)
-    @PostMapping("/search")
-    public String search(
-            @RequestParam("keyword") String keyword,
-            Model model
-    ) {
-        // 사이트 선택은 화면에서 없앴으니 기본값으로 전체
-        String[] sites = new String[]{"dc", "clien", "fmk", "quasar"};
-
-        crawlQueue.add(keyword, sites);
-
-        model.addAttribute("keyword", keyword);
-        return "waiting"; // waiting.html: "분석 중입니다..." 화면
-    }
-
-    // 결과 페이지 (resul.html)
-    @GetMapping("/result")
-    public String result(@RequestParam("keyword") String keyword, Model model) {
-        CrawlJob job = crawlQueue.get(keyword);
-
-        if (job == null || job.getStatus() != CrawlJob.Status.DONE) {
-            model.addAttribute("keyword", keyword);
-            return "waiting";
-        }
-
-        String filePath = "data_storage/" + keyword + "/" + keyword + "_report.md";
-        File file = new File(filePath);
-        if (!file.exists()) {
-            model.addAttribute("error", "리포트 파일이 없습니다.");
-            return "analy";
-        }
-
-        Map<String, String> reportData = MdReportParser.parseReport(filePath);
-
-        model.addAttribute("keyword", keyword);
-        model.addAttribute("pros", reportData.getOrDefault("pros", "").lines().toList());
-        model.addAttribute("cons", reportData.getOrDefault("cons", "").lines().toList());
-        model.addAttribute("summary", reportData.getOrDefault("summary", "내용 없음"));
-
-        // 결과를 별도 result.html 대신 analy 오른쪽 패널에 표시
-        return "analy";
-    }
->>>>>>> origin/main
 }

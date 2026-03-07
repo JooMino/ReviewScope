@@ -73,7 +73,6 @@
     </div>
 
     <!-- 오른쪽: 결과 패널 (크롤 완료 후) -->
-<<<<<<< HEAD
 <aside class="analyze-result-panel" id="resultPanel">
     <div class="result-card" id="resultCard">
         <h2 class="result-title">분석 결과 미리보기</h2>
@@ -82,34 +81,6 @@
         </div>
     </div>
 </aside>
-=======
-    <aside class="analyze-result-panel">
-	  <div class="result-card">
-	    <h2 class="result-title">분석 결과 미리보기</h2>
-	
-	    <section class="result-section">
-	      <h3>종합 요약</h3>
-	      <p th:text="${summary}">
-	        여기에 요약 내용이 들어갈 예정입니다.
-	      </p>
-	    </section>
-	
-	    <section class="result-section">
-	      <h3>긍정적 평가 (Pros)</h3>
-	      <ul>
-	        <li th:each="p : ${pros}" th:text="${p}">장점 예시 1</li>
-	      </ul>
-	    </section>
-	
-	    <section class="result-section">
-	      <h3>부정적 평가 (Cons)</h3>
-	      <ul>
-	        <li th:each="c : ${cons}" th:text="${c}">단점 예시 1</li>
-	      </ul>
-	    </section>
-	  </div>
-	</aside>
->>>>>>> origin/main
 </div>
 
 <script>
@@ -119,7 +90,6 @@
 
 
     <script>
-<<<<<<< HEAD
  // analy.html의 <script> 태그 안에 추가
 		// 검색 시작 시 호출되는 부분
 		const keyword = formData.get('keyword');
@@ -204,8 +174,6 @@
             </section>
         `;
     }
-=======
->>>>>>> origin/main
         // 카테고리별 TOP5 데이터
         const rankingData = {
             mouse: [
