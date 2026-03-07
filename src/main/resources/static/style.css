@@ -568,61 +568,41 @@ input[type="text"]:focus {
     min-width: 0;
 }
 
-/* =========================
-   결과 리포트 카드 레이아웃
-========================= */
-
-/* 보고서 컨테이너 */
-/* --- 결과 리포트 전용 레이아웃 --- */
-.report-container {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-top: 10px;
+.result-card {
+    background: var(--bg-card);
+    border-radius: 20px;
+    padding: 22px 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    margin-top: 180px; 
+    max-width:800px;
 }
 
-.report-card {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: var(--shadow);
+.result-title {
+    font-size: 20px;
+    margin-bottom: 12px;
 }
 
-.card-header-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 10px;
+.result-section {
+    margin-top: 16px;
 }
 
-.title-pros { color: var(--accent); }
-.title-cons { color: var(--accent-red); }
-
-/* 장단점 좌우 배치 (화면 넓을 때) */
-.pros-cons-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
+.result-section h3 {
+    font-size: 15px;
+    margin-bottom: 6px;
 }
 
-/* 마크다운 본문 가독성 */
-.markdown-body {
-    line-height: 1.7;
-    color: var(--text-main);
-    font-size: 14px;
+.result-section p,
+.result-card ul {
+    list-style: none;      /* 점 없애기 */
+    padding-left: 0;       /* 왼쪽 들여쓰기 제거 */
+    margin: 4px 0 0;
 }
-.markdown-body strong { color: #fff; background: rgba(0, 224, 198, 0.2); padding: 2px 4px; border-radius: 4px; }
-.markdown-body ul { padding-left: 20px; }
-.markdown-body li { margin-bottom: 8px; }
-
-@media (max-width: 1100px) {
-    .pros-cons-grid { grid-template-columns: 1fr; }
+.result-section li {
+    font-size: 13px;
+    color: var(--text-sub);
+    line-height: 1.5;
 }
+/* 로딩 컨테이너: 패널 중앙 정렬 */
 .loading-container {
     display: flex;
     flex-direction: column;
