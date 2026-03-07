@@ -50,12 +50,9 @@ public class MdReportParser {
         String[] endMarkers = {
             "- **단점**:", 
             "- **함께 언급된 모델", 
-            "#### 함께 언급된 모델", 
-            "#### QCY", // 다른 헤더들 예시
-            "### 2.", 
-            "### 3.",
-            "## 결론",
-            "## 본론" 
+            "#### 함께 언급된 모델",
+            "## 본론",
+            "### 2. 시간 범위"
         };
 
         int bestEndIndex = content.length();
