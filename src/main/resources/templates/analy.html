@@ -161,29 +161,33 @@ document.addEventListener('DOMContentLoaded', function() {
 	            .trim()
 	            .replace(/\n/g, '<br>'); // 줄바꿈 적용
 	    };
-	
+	 // 데이터 안전하게 추출
+	    const intro = getCleanText(data.intro);
+	    const pros = getCleanText(data.pros);
+	    const cons = getCleanText(data.cons);
+	    const models = getCleanText(data.models)
 	    // 2. 화면 구성 (기존 그릇 유지)
 	    resultContent.innerHTML = `
 	        <div class="analysis-report">
 	            <div class="report-section">
 	                <h3 style="color: var(--accent);">📝 요약 결과</h3>
-	                <p>${cleanText(data.intro)}</p>
+	                <p>${cleanText(intro)}</p>
 	            </div>
 	
 	            <div class="pros-cons-grid" style="display: flex; gap: 20px; margin-top: 20px;">
 	                <div style="flex: 1;">
 	                    <h3 style="color: var(--accent);">👍 장점</h3>
-	                    <p>${cleanText(data.pros)}</p>
+	                    <p>${cleanText(pros)}</p>
 	                </div>
 	                <div style="flex: 1;">
 	                    <h3 style="color: var(--accent-red);">👎 단점</h3>
-	                    <p>${cleanText(data.cons)}</p>
+	                    <p>${cleanText(cons)}</p>
 	                </div>
 	            </div>
 	
 	            <div class="report-section" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
 	                <h3 style="color: #FFD700;">🔗 함께 언급된 모델</h3>
-	                <p>${cleanText(data.models)}</p>
+	                <p>${cleanText(models)}</p>
 	            </div>
 	        </div>
 	    `;
