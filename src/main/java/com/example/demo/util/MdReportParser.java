@@ -16,7 +16,7 @@ public class MdReportParser {
             
             // 1. 전체 내용
             sections.put("summary", content);
-            
+            sections.put("intro", extractIntro(content));
             // 2. 단순 문자열 검색으로 추출
             sections.put("pros", extractByKeyword(content, "- **장점**:"));
             sections.put("cons", extractByKeyword(content, "- **단점**:"));
@@ -35,7 +35,21 @@ public class MdReportParser {
         
         return sections;
     }
+    private static String extractIntro(String content) {
+        // 서론이 끝나는 지점 후보들
+        String[] endMarkers = {"## 본론", "### 1.", "## 주요 이슈"};
+        int endIndex = content.length();
 
+        for (String marker : endMarkers) {
+            int foundIndex = content.indexOf(marker);
+            if (foundIndex != -1 && foundIndex < endIndex) {
+                endIndex = foundIndex;
+            }
+        }
+        
+        // 처음부터 찾은 지점까지 자르고 기호(#) 제거
+        return content.substring(0, endIndex).trim();
+    }
     private static String extractByKeyword(String content, String startKeyword) {
         // 1. 시작 키워드 위치 찾기
         int startIndex = content.indexOf(startKeyword);

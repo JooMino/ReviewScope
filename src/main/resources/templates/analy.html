@@ -149,31 +149,45 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // 4. 화면에 데이터 그리기
-    function renderResult(data) {
-        const summary = data.summary || "분석된 내용이 없습니다.";
-        const prosHtml = (data.pros && data.pros.length > 0) 
-            ? data.pros.map(p => `<li>${p}</li>`).join('') 
-            : "<li>데이터 없음</li>";
-        const consHtml = (data.cons && data.cons.length > 0) 
-            ? data.cons.map(c => `<li>${c}</li>`).join('') 
-            : "<li>데이터 없음</li>";
-
-        resultContent.innerHTML = `
-            <section class="result-section">
-                <h3>종합 요약</h3>
-                <p>${summary}</p>
-            </section>
-            <section class="result-section">
-                <h3>긍정적 평가 (Pros)</h3>
-                <ul class="result-list">${prosHtml}</ul>
-            </section>
-            <section class="result-section">
-                <h3>부정적 평가 (Cons)</h3>
-                <ul class="result-list">${consHtml}</ul>
-            </section>
-        `;
-    }
-
+	function renderResult(data) {
+	    const resultContent = document.getElementById('resultContent');
+	
+	    // 1. 가공 함수: 기호 제거하고 줄바꿈을 HTML로 변환
+	    const cleanText = (text) => {
+	        if (!text) return "내용 없음";
+	        return text
+	            .replace(/[#*]/g, '')    // #과 * 기호 삭제
+	            .replace(/-/g, '•')      // 리스트 기호(-)를 예쁜 점(•)으로 변경
+	            .trim()
+	            .replace(/\n/g, '<br>'); // 줄바꿈 적용
+	    };
+	
+	    // 2. 화면 구성 (기존 그릇 유지)
+	    resultContent.innerHTML = `
+	        <div class="analysis-report">
+	            <div class="report-section">
+	                <h3 style="color: var(--accent);">📝 요약 결과</h3>
+	                <p>${cleanText(data.intro)}</p>
+	            </div>
+	
+	            <div class="pros-cons-grid" style="display: flex; gap: 20px; margin-top: 20px;">
+	                <div style="flex: 1;">
+	                    <h3 style="color: var(--accent);">👍 장점</h3>
+	                    <p>${cleanText(data.pros)}</p>
+	                </div>
+	                <div style="flex: 1;">
+	                    <h3 style="color: var(--accent-red);">👎 단점</h3>
+	                    <p>${cleanText(data.cons)}</p>
+	                </div>
+	            </div>
+	
+	            <div class="report-section" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
+	                <h3 style="color: #FFD700;">🔗 함께 언급된 모델</h3>
+	                <p>${cleanText(data.models)}</p>
+	            </div>
+	        </div>
+	    `;
+	}
     // --- TOP5 관련 기존 로직 ---
     const rankingData = {
         mouse: [
