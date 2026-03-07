@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>ReviewScope - 홈</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="left-sidebar">
+    <div class="brand">
+        Review<span>Scope</span>
+    </div>
+    <ul class="menu-list">
+        <li><a class="menu-item active" href="/">홈</a></li>
+        <li><a class="menu-item" href="/analyze">분석</a></li>
+        <li><a class="menu-item">분석 기록</a></li>
+        <li><a class="menu-item">설정</a></li>
+    </ul>
+</div>
+
+<div class="main-container home-layout">
+    <div class="home-main">
+        <div class="home-header">
+            <h1>게이밍 기어 한눈에 보기</h1>
+            <p>카테고리를 선택하고 상위 랭킹 10개 제품을 확인해보세요.</p>
+        </div>
+
+        <div class="category-tabs">
+            <button class="category-tab active" data-category="mouse">마우스</button>
+            <button class="category-tab" data-category="keyboard">키보드</button>
+            <button class="category-tab" data-category="headset">헤드셋</button>
+            <button class="category-tab" data-category="monitor">모니터</button>
+        </div>
+
+        <div class="ranking-card section-card">
+            <div class="ranking-card-header">
+                <div>
+                    <div class="ranking-card-title" id="ranking-title">마우스 TOP 10</div>
+                    <div class="ranking-card-sub">데이터 출처: 다나와 / 커뮤니티 요약</div>
+                </div>
+            </div>
+
+            <div class="product-list" id="product-list"></div>
+        </div>
+    </div>
+
+    <div class="home-side">
+        <div class="detail-card section-card">
+            <div class="detail-badge">선택된 제품</div>
+            <div class="detail-thumb" id="detail-thumb">🖱️</div>
+            <div class="detail-name" id="detail-name">제품을 선택하세요</div>
+            <div class="detail-desc" id="detail-desc">
+                카테고리별 상위 제품을 확인하고, 관심 제품을 선택해 기본 정보를 살펴보세요.
+            </div>
+
+            <div class="detail-spec-box">
+                <div class="detail-spec-title">카테고리 · 기본 스펙</div>
+                <ul class="detail-spec-list" id="detail-spec-list">
+                    <li><span>안내</span><strong>프로토타입 화면입니다.</strong></li>
+                    <li><span>데이터</span><strong>실제 DB/크롤링 결과로 대체 예정</strong></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const productData = {
+        mouse: [
+            { rank: 1, icon: "🖱️", name: "로지텍 G PRO X SUPERLIGHT 2", meta: "무선 · 60g대 초경량", price: "189,000원", desc: "가벼운 무게와 안정적인 센서 성능으로 많이 언급되는 대표 게이밍 마우스입니다." },
+            { rank: 2, icon: "🖱️", name: "레이저 데스애더 V3 PRO", meta: "FPS 인기 · 인체공학", price: "179,000원", desc: "손에 잘 맞는 그립감과 센서 성능으로 좋은 평가를 받는 제품입니다." },
+            { rank: 3, icon: "🖱️", name: "로지텍 G102 2세대", meta: "가성비 유선", price: "19,000원", desc: "입문용으로 많이 추천되는 가성비 마우스입니다." },
+            { rank: 4, icon: "🖱️", name: "팜그립 게이밍 마우스 A", meta: "팜그립 최적화", price: "39,000원", desc: "팜그립 사용자 기준 편한 쉘과 무난한 성능이 장점입니다." },
+            { rank: 5, icon: "🖱️", name: "초경량 게이밍 마우스 B", meta: "약 55g", price: "59,000원", desc: "가벼운 무게를 선호하는 사용자층에서 인기가 있습니다." }
+        ],
+        keyboard: [
+            { rank: 1, icon: "⌨️", name: "키크론 Q1 Pro", meta: "커스텀 · 무선", price: "239,000원", desc: "타건감과 확장성 면에서 선호도가 높은 키보드입니다." },
+            { rank: 2, icon: "⌨️", name: "앱코 K640", meta: "가성비", price: "39,000원", desc: "부담 없는 가격대에서 많이 찾는 모델입니다." },
+            { rank: 3, icon: "⌨️", name: "레오폴드 FC750RBT", meta: "정갈한 타건감", price: "179,000원", desc: "정숙성과 키감 면에서 꾸준히 언급되는 제품입니다." }
+        ],
+        headset: [
+            { rank: 1, icon: "🎧", name: "소니 WH-1000XM5", meta: "노이즈 캔슬링", price: "399,000원", desc: "무선 헤드셋 분야에서 전반적으로 높은 평가를 받는 모델입니다." },
+            { rank: 2, icon: "🎧", name: "에어팟 맥스", meta: "애플 생태계", price: "769,000원", desc: "연동성과 음질에서 장점이 있지만 가격은 높은 편입니다." }
+        ],
+        monitor: [
+            { rank: 1, icon: "🖥️", name: "LG 27GP850", meta: "QHD · 고주사율", price: "399,000원", desc: "게이밍과 범용 사용 밸런스가 좋은 모니터입니다." },
+            { rank: 2, icon: "🖥️", name: "삼성 오디세이 G5", meta: "커브드", price: "329,000원", desc: "커브드 패널을 선호하는 사용자에게 자주 언급됩니다." }
+        ]
+    };
+
+    const titleMap = {
+        mouse: "마우스 TOP 10",
+        keyboard: "키보드 TOP 10",
+        headset: "헤드셋 TOP 10",
+        monitor: "모니터 TOP 10"
+    };
+
+    const tabs = document.querySelectorAll(".category-tab");
+    const productList = document.getElementById("product-list");
+    const rankingTitle = document.getElementById("ranking-title");
+
+    const detailThumb = document.getElementById("detail-thumb");
+    const detailName = document.getElementById("detail-name");
+    const detailDesc = document.getElementById("detail-desc");
+    const detailSpecList = document.getElementById("detail-spec-list");
+
+    function renderDetail(item, category) {
+        detailThumb.textContent = item.icon;
+        detailName.textContent = item.name;
+        detailDesc.textContent = item.desc;
+        detailSpecList.innerHTML = `
+            <li><span>카테고리</span><strong>${titleMap[category].replace(" TOP 10", "")}</strong></li>
+            <li><span>특징</span><strong>${item.meta}</strong></li>
+            <li><span>가격</span><strong>${item.price}</strong></li>
+        `;
+    }
+
+    function renderProducts(category) {
+        const items = productData[category] || [];
+        rankingTitle.textContent = titleMap[category];
+        productList.innerHTML = "";
+
+        items.forEach((item) => {
+            const div = document.createElement("div");
+            div.className = "product-item";
+            div.innerHTML = `
+                <div class="product-rank">#${item.rank}</div>
+                <div class="product-thumb">${item.icon}</div>
+                <div class="product-info">
+                    <div class="product-name">${item.name}</div>
+                    <div class="product-meta">${item.meta}</div>
+                </div>
+                <div class="product-price">${item.price}</div>
+            `;
+
+            div.addEventListener("click", () => renderDetail(item, category));
+            productList.appendChild(div);
+        });
+
+        if (items.length > 0) {
+            renderDetail(items[0], category);
+        }
+    }
+
+    tabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+            tabs.forEach(t => t.classList.remove("active"));
+            tab.classList.add("active");
+            renderProducts(tab.dataset.category);
+        });
+    });
+
+    renderProducts("mouse");
+</script>
+</body>
+</html>

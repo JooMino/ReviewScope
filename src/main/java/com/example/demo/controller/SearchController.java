@@ -21,81 +21,59 @@ public class SearchController {
         this.crawlQueue = crawlQueue;
     }
 
-    // 메인 페이지
+    // HOME (나중에 따로 디자인)
     @GetMapping("/")
-    public String index() {
-        return "index";
+    public String home() {
+        return "home"; // home.html 만들거나, 일단 analy로 리다이렉트해도 됨
     }
 
-    // 검색 요청 처리
+    // 키워드 정밀 분석 화면 (analy.html)
+    @GetMapping("/analyze")
+    public String analyzePage() {
+        return "analy"; // templates/analy.html
+    }
+
+
+    // 분석 요청 처리 (analy.html에서 폼 전송)
     @PostMapping("/search")
     public String search(
             @RequestParam("keyword") String keyword,
-            @RequestParam(value = "sites", required = false) String[] sites,
             Model model
     ) {
-        if (sites == null || sites.length == 0) {
-            sites = new String[]{"dc", "clien", "fmk", "quasar"};
-        }
+        // 사이트 선택은 화면에서 없앴으니 기본값으로 전체
+        String[] sites = new String[]{"dc", "clien", "fmk", "quasar"};
 
-        // 큐에 작업 등록
         crawlQueue.add(keyword, sites);
 
         model.addAttribute("keyword", keyword);
-        return "waiting";   // 대기 화면으로 이동
+        return "waiting"; // waiting.html: "분석 중입니다..." 화면
     }
-    
-    // 결과 페이지
+
+    // 결과 페이지 (resul.html)
     @GetMapping("/result")
-    public String result(
-            @RequestParam("keyword") String keyword,
-            Model model
-    ) {
+    public String result(@RequestParam("keyword") String keyword, Model model) {
         CrawlJob job = crawlQueue.get(keyword);
 
-        // 1. 작업 진행 중 or 실패 체크
-        if (job == null) {
-            model.addAttribute("keyword", keyword);
-            return "waiting";
-        }
-        
-        // 실패했다면 에러 페이지나 알림을 띄울 수도 있음 (여기선 일단 대기로 처리하거나 분기 가능)
-        if (job.getStatus() == CrawlJob.Status.FAILED) {
-             model.addAttribute("error", "분석 작업이 실패했습니다.");
-             return "index"; // 메인으로 튕기기
-        }
-
-        if (job.getStatus() != CrawlJob.Status.DONE) {
+        if (job == null || job.getStatus() != CrawlJob.Status.DONE) {
             model.addAttribute("keyword", keyword);
             return "waiting";
         }
 
-        // 2. 작업 완료됨! (Status.DONE)
-        // 이제 CSV가 아니라 MD 파일을 읽습니다.
-        // 저장 경로: data_storage/키워드/키워드_report.md
         String filePath = "data_storage/" + keyword + "/" + keyword + "_report.md";
-        
         File file = new File(filePath);
         if (!file.exists()) {
-            // 완료는 됐는데 파일이 없다? -> 에러 처리
             model.addAttribute("error", "리포트 파일이 없습니다.");
-            return "index";
+            return "analy";
         }
 
-        // 3. MD 파서로 내용 쪼개기
         Map<String, String> reportData = MdReportParser.parseReport(filePath);
 
-        // 4. HTML로 데이터 전달
-        // 맵에 담긴 pros, cons, models, fullContent 등을 모델에 추가
         model.addAttribute("keyword", keyword);
-        model.addAttribute("pros", reportData.getOrDefault("pros", "내용 없음"));
-        model.addAttribute("cons", reportData.getOrDefault("cons", "내용 없음"));
-        model.addAttribute("models", reportData.getOrDefault("models", "내용 없음"));
-        model.addAttribute("summary", reportData.getOrDefault("summary", "내용 없음")); // 요약이나 전체 내용
+        model.addAttribute("pros", reportData.getOrDefault("pros", "").lines().toList());
+        model.addAttribute("cons", reportData.getOrDefault("cons", "").lines().toList());
+        model.addAttribute("summary", reportData.getOrDefault("summary", "내용 없음"));
 
-        // 필요하다면 원본 전체도 보냄
-        // model.addAttribute("fullReport", reportData.get("fullContent"));
-
-        return "result"; // result.html (수정 필요)
+        // 결과를 별도 result.html 대신 analy 오른쪽 패널에 표시
+        return "analy";
     }
 }
