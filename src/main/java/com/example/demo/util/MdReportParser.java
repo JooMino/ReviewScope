@@ -16,7 +16,7 @@ public class MdReportParser {
             
             // 1. 전체 내용
             sections.put("summary", content);
-            sections.put("intro",extractByKeyword(content, "##서론"));
+            sections.put("intro",extractByKeyword(content, "## 서론"));
             // 2. 단순 문자열 검색으로 추출
             sections.put("pros", extractByKeyword(content, "- **장점**:"));
             sections.put("cons", extractByKeyword(content, "- **단점**:"));
