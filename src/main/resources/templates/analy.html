@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ReviewScope - 분석</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="left-sidebar">
+    <div class="brand">
+        Review<span>Scope</span>
+    </div>
+    <ul class="menu-list">
+        <li><a class="menu-item" th:href="@{/}">홈</a></li>
+        <li><a class="menu-item active" th:href="@{/analyze}">분석</a></li>
+        <li><a class="menu-item">분석 기록</a></li>
+        <li><a class="menu-item">설정</a></li>
+    </ul>
+</div>
+
+<div class="main-container analyze-layout">
+    <!-- 왼쪽: 입력 + TOP5 -->
+    <div class="analyze-wrapper">
+        <header class="page-header">
+            <h1>키워드로 정밀 분석하기</h1>
+            <p>
+                제품명을 직접 입력해서 커뮤니티 여론을 깊게 분석해보세요.<br>
+                DC, 클리앙, 퀘이사존, 펨코의 최신 글을 기반으로 여론을 분석합니다.
+            </p>
+        </header>
+
+        <section class="analyze-card">
+            <div class="analyze-title-row">
+                <span class="analyze-icon">🔍</span>
+                <span class="analyze-title">무엇을 분석할까요?</span>
+            </div>
+
+            <p class="analyze-sub">
+                제품명 또는 키워드를 입력하면 커뮤니티 최신 글을 기반으로 여론을 분석합니다.
+            </p>
+
+            <form class="analyze-form" action="/search" method="post">
+                <input type="text"
+                       id="keywordInput"
+                       name="keyword"
+                       placeholder="제품명 또는 키워드를 입력하세요 (예: 로지텍 G304)"
+                       required>
+                <button type="submit" class="btn-submit">
+                    🧪 정밀 분석 시작
+                </button>
+            </form>
+
+            <p class="tip">💡 분석에는 약 10~30초가 소요될 수 있습니다.</p>
+        </section>
+
+        <!-- TOP5 영역 -->
+        <section class="category-top5-wrapper">
+            <div class="category-top5-tabs">
+                <button class="top5-tab active" data-category="mouse">마우스</button>
+                <button class="top5-tab" data-category="keyboard">키보드</button>
+                <button class="top5-tab" data-category="headset">헤드셋</button>
+                <button class="top5-tab" data-category="monitor">모니터</button>
+            </div>
+
+            <div class="category-top5-card">
+                <div class="category-top5-header">
+                    <span class="label" id="top5-title">마우스 TOP 5</span>
+                    <span class="more">자세히 보기 &gt;</span>
+                </div>
+                <ul class="top5-list" id="top5-list"></ul>
+            </div>
+        </section>
+    </div>
+
+    <!-- 오른쪽: 결과 패널 (크롤 완료 후) -->
+<aside class="analyze-result-panel" id="resultPanel">
+    <div class="result-card" id="resultCard">
+        <h2 class="result-title">분석 결과 미리보기</h2>
+        <div id="resultContent">
+            <p class="analyze-sub">분석을 시작하면 이곳에 결과가 표시됩니다.</p>
+        </div>
+    </div>
+</aside>
+</div>
+
+<script>
+    /* TOP5 탭/리스트 JavaScript (지금 쓰던 rankingData 그대로) */
+</script>
+</body>
+
+
+    <script>
+ // analy.html의 <script> 태그 안에 추가
+		// 검색 시작 시 호출되는 부분
+		const keyword = formData.get('keyword');
+		
+		resultContent.innerHTML = `
+		    <div class="loading-container">
+		        <p><strong>"${keyword}"</strong> 여론 분석 중...</p>
+		        <div class="spinner"></div>
+		        <p class="tip">전국 커뮤니티의 데이터를 수집하고 있습니다.<br>약 10~30초만 기다려 주세요.</p>
+		    </div>
+		`;
+	    const analyzeForm = document.querySelector('.analyze-form');
+	    const resultContent = document.getElementById('resultContent');
+	
+	    analyzeForm.addEventListener('submit', function(e) {
+	        e.preventDefault(); // 페이지 새로고침 방지
+
+        const formData = new FormData(analyzeForm);
+        const keyword = formData.get('keyword');
+
+        // 1. UI를 '로딩 중' 상태로 변경
+        resultContent.innerHTML = `
+            <div class="loading-container">
+                <p><strong>"${keyword}"</strong> 분석 중...</p>
+                <div class="spinner"></div> <p class="tip">약 10~30초가 소요될 수 있습니다.</p>
+            </div>
+        `;
+
+        // 2. 서버에 분석 요청
+        fetch('/search', {
+            method: 'POST',
+            body: new URLSearchParams(formData)
+        })
+        .then(res => res.json())
+        .then(data => {
+            // 3. 상태 체크 시작 (폴링)
+            checkStatus(data.keyword);
+        });
+    });
+
+    function checkStatus(keyword) {
+        const interval = setInterval(() => {
+            fetch(`/api/crawl/status?keyword=${keyword}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'DONE') {
+                        clearInterval(interval);
+                        fetchFinalResult(keyword); // 결과 데이터 가져오기
+                    } else if (data.status === 'FAILED') {
+                        clearInterval(interval);
+                        resultContent.innerHTML = `<p style="color:red;">분석에 실패했습니다.</p>`;
+                    }
+                });
+        }, 2000);
+    }
+
+    function fetchFinalResult(keyword) {
+        fetch(`/api/result-data?keyword=${keyword}`)
+            .then(res => res.json())
+            .then(data => {
+                // 4. 데이터를 받아와서 화면 업데이트
+                renderResult(data);
+            });
+    }
+
+    function renderResult(data) {
+        let prosHtml = data.pros.map(p => `<li>${p}</li>`).join('');
+        let consHtml = data.cons.map(c => `<li>${c}</li>`).join('');
+
+        resultContent.innerHTML = `
+            <section class="result-section">
+                <h3>종합 요약</h3>
+                <p>${data.summary}</p>
+            </section>
+            <section class="result-section">
+                <h3>긍정적 평가 (Pros)</h3>
+                <ul>${prosHtml}</ul>
+            </section>
+            <section class="result-section">
+                <h3>부정적 평가 (Cons)</h3>
+                <ul>${consHtml}</ul>
+            </section>
+        `;
+    }
+        // 카테고리별 TOP5 데이터
+        const rankingData = {
+            mouse: [
+                { rank: 1, name: "로지텍 G PRO X SUPERLIGHT 2"},
+                { rank: 2, name: "레이저 데스애더 V3 PRO"},
+                { rank: 3, name: "로지텍 G102 2세대"},
+                { rank: 4, name: "팜그립 게이밍 마우스 A"},
+                { rank: 5, name: "초경량 게이밍 마우스 B"}
+            ],
+            keyboard: [
+                { rank: 1, name: "키크론 Q1 Pro"},
+                { rank: 2, name: "앱코 K640" },
+                { rank: 3, name: "레오폴드 FC750RBT"},
+                { rank: 4, name: "무접점 키보드 A"},
+                { rank: 5, name: "65% 배열 키보드 B" }
+            ],
+            headset: [
+                { rank: 1, name: "소니 WH-1000XM5"},
+                { rank: 2, name: "애플 에어팟 맥스"},
+                { rank: 3, name: "젠하이저 HD 599"},
+                { rank: 4, name: "게이밍 헤드셋 A"},
+                { rank: 5, name: "게이밍 헤드셋 B"}
+            ],
+            monitor: [
+                { rank: 1, name: "LG 27GP850"},
+                { rank: 2, name: "삼성 오디세이 G5"},
+                { rank: 3, name: "DELL U2720Q"},
+                { rank: 4, name: "32인치 QHD 모니터 A"},
+                { rank: 5, name: "와이드 모니터 B"}
+            ]
+        };
+
+        const titleMap = {
+            mouse:   '마우스 TOP 5',
+            keyboard:'키보드 TOP 5',
+            headset: '헤드셋 TOP 5',
+            monitor: '모니터 TOP 5'
+        };
+
+        const top5Tabs    = document.querySelectorAll('.top5-tab');
+        const top5TitleEl = document.getElementById('top5-title');
+        const top5ListEl  = document.getElementById('top5-list');
+        const keywordInput = document.getElementById('keywordInput');
+
+        function renderTop5(category) {
+            const list = rankingData[category] || [];
+            top5TitleEl.textContent = titleMap[category] || 'TOP 5';
+
+            top5ListEl.innerHTML = '';
+            list.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'top5-item';
+                li.innerHTML = `
+                    <span class="top5-rank">#${item.rank}</span>
+                    <span class="top5-name">${item.name}</span>
+                    <span class="top5-price">${item.price}</span>
+                `;
+                // 클릭 시 검색창에 제품명 채워넣기
+                li.addEventListener('click', () => {
+                    keywordInput.value = item.name;
+                    keywordInput.focus();
+                });
+                top5ListEl.appendChild(li);
+            });
+        }
+
+        top5Tabs.forEach(btn => {
+            btn.addEventListener('click', () => {
+                top5Tabs.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const category = btn.dataset.category;
+                renderTop5(category);
+            });
+        });
+
+        // 초기: 마우스 TOP5
+        renderTop5('mouse');
+    </script>
+</body>
+</html>

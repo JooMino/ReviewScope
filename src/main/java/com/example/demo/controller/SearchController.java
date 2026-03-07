@@ -8,6 +8,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.io.File;
 import java.util.Map;
@@ -21,81 +22,46 @@ public class SearchController {
         this.crawlQueue = crawlQueue;
     }
 
-    // 메인 페이지
+    // HOME (나중에 따로 디자인)
     @GetMapping("/")
-    public String index() {
-        return "index";
+    public String home() {
+        return "home"; // home.html 만들거나, 일단 analy로 리다이렉트해도 됨
     }
 
-    // 검색 요청 처리
-    @PostMapping("/search")
-    public String search(
-            @RequestParam("keyword") String keyword,
-            @RequestParam(value = "sites", required = false) String[] sites,
-            Model model
-    ) {
-        if (sites == null || sites.length == 0) {
-            sites = new String[]{"dc", "clien", "fmk", "quasar"};
-        }
-
-        // 큐에 작업 등록
-        crawlQueue.add(keyword, sites);
-
-        model.addAttribute("keyword", keyword);
-        return "waiting";   // 대기 화면으로 이동
+    // 키워드 정밀 분석 화면 (analy.html)
+    @GetMapping("/analyze")
+    public String analyzePage() {
+        return "analy"; // templates/analy.html
     }
-    
-    // 결과 페이지
-    @GetMapping("/result")
-    public String result(
-            @RequestParam("keyword") String keyword,
-            Model model
-    ) {
-        CrawlJob job = crawlQueue.get(keyword);
 
-        // 1. 작업 진행 중 or 실패 체크
-        if (job == null) {
-            model.addAttribute("keyword", keyword);
-            return "waiting";
-        }
-        
-        // 실패했다면 에러 페이지나 알림을 띄울 수도 있음 (여기선 일단 대기로 처리하거나 분기 가능)
-        if (job.getStatus() == CrawlJob.Status.FAILED) {
-             model.addAttribute("error", "분석 작업이 실패했습니다.");
-             return "index"; // 메인으로 튕기기
-        }
 
-        if (job.getStatus() != CrawlJob.Status.DONE) {
-            model.addAttribute("keyword", keyword);
-            return "waiting";
-        }
+ // SearchController.java
 
-        // 2. 작업 완료됨! (Status.DONE)
-        // 이제 CSV가 아니라 MD 파일을 읽습니다.
-        // 저장 경로: data_storage/키워드/키워드_report.md
-        String filePath = "data_storage/" + keyword + "/" + keyword + "_report.md";
-        
-        File file = new File(filePath);
-        if (!file.exists()) {
-            // 완료는 됐는데 파일이 없다? -> 에러 처리
-            model.addAttribute("error", "리포트 파일이 없습니다.");
-            return "index";
-        }
-
-        // 3. MD 파서로 내용 쪼개기
-        Map<String, String> reportData = MdReportParser.parseReport(filePath);
-
-        // 4. HTML로 데이터 전달
-        // 맵에 담긴 pros, cons, models, fullContent 등을 모델에 추가
-        model.addAttribute("keyword", keyword);
-        model.addAttribute("pros", reportData.getOrDefault("pros", "내용 없음"));
-        model.addAttribute("cons", reportData.getOrDefault("cons", "내용 없음"));
-        model.addAttribute("models", reportData.getOrDefault("models", "내용 없음"));
-        model.addAttribute("summary", reportData.getOrDefault("summary", "내용 없음")); // 요약이나 전체 내용
-
-        // 필요하다면 원본 전체도 보냄
-        // model.addAttribute("fullReport", reportData.get("fullContent"));
-
-        return "result"; // result.html (수정 필요)
-    }
+	 // 1. /search 수정: 페이지 이동 대신 키워드만 반환 (JSON)
+	 @PostMapping("/search")
+	 @ResponseBody // 페이지 이동을 막음
+	 public Map<String, String> search(@RequestParam("keyword") String keyword) {
+	     String[] sites = new String[]{"dc", "clien", "fmk", "quasar"};
+	     crawlQueue.add(keyword, sites);
+	     return Map.of("keyword", keyword, "status", "START");
+	 }
+	
+	 // 2. /result 수정: 데이터만 반환하는 API 형태로 변경 (또는 Fragment 반환)
+	 @GetMapping("/api/result-data")
+	 @ResponseBody
+	 public Map<String, Object> getResultData(@RequestParam("keyword") String keyword) {
+	     CrawlJob job = crawlQueue.get(keyword);
+	     if (job == null || job.getStatus() != CrawlJob.Status.DONE) {
+	         return Map.of("error", "NOT_READY");
+	     }
+	
+	     String filePath = "data_storage/" + keyword + "/" + keyword + "_report.md";
+	     Map<String, String> reportData = MdReportParser.parseReport(filePath);
+	
+	     return Map.of(
+	         "summary", reportData.getOrDefault("summary", "내용 없음"),
+	         "pros", reportData.getOrDefault("pros", "").lines().toList(),
+	         "cons", reportData.getOrDefault("cons", "").lines().toList()
+	     );
+	 }
 }
