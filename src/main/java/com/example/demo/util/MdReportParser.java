@@ -21,9 +21,6 @@ public class MdReportParser {
             
             // 모델 섹션은 헤더(####)일 수도 있고 리스트(- **)일 수도 있음 -> 둘 다 시도
             String models = extractByKeyword(content, "#### 함께 언급된 모델");
-            if (models.isEmpty()) {
-                models = extractByKeyword(content, "- **함께 언급된 모델");
-            }
             sections.put("models", models);
 
         } catch (IOException e) {
@@ -46,10 +43,8 @@ public class MdReportParser {
         
         // 2. 끝점 찾기 (다음 섹션 후보들 중 가장 가까운 것)
         String[] endMarkers = {
-            "- **단점**:", 
-            "- **함께 언급된 모델", 
+            "- **단점**:",  
             "#### 함께 언급된 모델",
-            "## 본론",
             "### 2. 시간 범위"
         };
 
