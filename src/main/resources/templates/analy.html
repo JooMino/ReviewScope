@@ -91,53 +91,53 @@
 
     <script>
  // analy.html의 <script> 태그 안에 추가
-		// 검색 시작 시 호출되는 부분
-		const keyword = formData.get('keyword');
-		
-		resultContent.innerHTML = `
-		    <div class="loading-container">
-		        <p><strong>"${keyword}"</strong> 여론 분석 중...</p>
-		        <div class="spinner"></div>
-		        <p class="tip">전국 커뮤니티의 데이터를 수집하고 있습니다.<br>약 10~30초만 기다려 주세요.</p>
-		    </div>
-		`;
-	    const analyzeForm = document.querySelector('.analyze-form');
-	    const resultContent = document.getElementById('resultContent');
-	
-	    analyzeForm.addEventListener('submit', function(e) {
-	        e.preventDefault(); // 페이지 새로고침 방지
+// 1. 필요한 요소 선택
+    const analyzeForm = document.querySelector('.analyze-form');
+    const resultContent = document.getElementById('resultContent');
+    const keywordInput = document.getElementById('keywordInput');
 
-        const formData = new FormData(analyzeForm);
-        const keyword = formData.get('keyword');
+    // 2. 폼 제출 이벤트 가로채기
+    if (analyzeForm) {
+        analyzeForm.addEventListener('submit', function(e) {
+            e.preventDefault(); // ★ 중요: 이걸 해야 waiting.html로 안 넘어감
 
-        // 1. UI를 '로딩 중' 상태로 변경
-        resultContent.innerHTML = `
-            <div class="loading-container">
-                <p><strong>"${keyword}"</strong> 분석 중...</p>
-                <div class="spinner"></div> <p class="tip">약 10~30초가 소요될 수 있습니다.</p>
-            </div>
-        `;
+            const formData = new FormData(analyzeForm);
+            const keyword = formData.get('keyword');
 
-        // 2. 서버에 분석 요청
-        fetch('/search', {
-            method: 'POST',
-            body: new URLSearchParams(formData)
-        })
-        .then(res => res.json())
-        .then(data => {
-            // 3. 상태 체크 시작 (폴링)
-            checkStatus(data.keyword);
+            // 오른쪽 패널을 로딩 상태로 변경
+            resultContent.innerHTML = `
+                <div class="loading-container">
+                    <p><strong>"${keyword}"</strong> 여론 분석 중...</p>
+                    <div class="spinner"></div>
+                    <p class="tip">전국 커뮤니티의 데이터를 수집하고 있습니다.<br>약 10~30초만 기다려 주세요.</p>
+                </div>
+            `;
+
+            // 서버에 비동기(Fetch) 요청
+            fetch('/search', {
+                method: 'POST',
+                body: new URLSearchParams(formData)
+            })
+            .then(res => res.json())
+            .then(data => {
+                checkStatus(data.keyword); // 상태 체크 시작
+            })
+            .catch(err => {
+                console.error("검색 요청 실패:", err);
+                resultContent.innerHTML = `<p style="color:red;">요청 중 오류가 발생했습니다.</p>`;
+            });
         });
-    });
+    }
 
+    // 3. 상태 체크 (폴링)
     function checkStatus(keyword) {
         const interval = setInterval(() => {
-            fetch(`/api/crawl/status?keyword=${keyword}`)
+            fetch(`/api/crawl/status?keyword=${encodeURIComponent(keyword)}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'DONE') {
                         clearInterval(interval);
-                        fetchFinalResult(keyword); // 결과 데이터 가져오기
+                        fetchFinalResult(keyword); // 분석 완료 시 데이터 가져오기
                     } else if (data.status === 'FAILED') {
                         clearInterval(interval);
                         resultContent.innerHTML = `<p style="color:red;">분석에 실패했습니다.</p>`;
@@ -146,31 +146,38 @@
         }, 2000);
     }
 
+    // 4. 최종 데이터 가져오기
     function fetchFinalResult(keyword) {
-        fetch(`/api/result-data?keyword=${keyword}`)
+        fetch(`/api/result-data?keyword=${encodeURIComponent(keyword)}`)
             .then(res => res.json())
             .then(data => {
-                // 4. 데이터를 받아와서 화면 업데이트
                 renderResult(data);
             });
     }
 
+    // 5. 화면에 데이터 그리기
     function renderResult(data) {
-        let prosHtml = data.pros.map(p => `<li>${p}</li>`).join('');
-        let consHtml = data.cons.map(c => `<li>${c}</li>`).join('');
+        // null 체크 및 데이터 가공
+        const summary = data.summary || "분석된 내용이 없습니다.";
+        const prosHtml = (data.pros && data.pros.length > 0) 
+            ? data.pros.map(p => `<li>${p}</li>`).join('') 
+            : "<li>데이터 없음</li>";
+        const consHtml = (data.cons && data.cons.length > 0) 
+            ? data.cons.map(c => `<li>${c}</li>`).join('') 
+            : "<li>데이터 없음</li>";
 
         resultContent.innerHTML = `
             <section class="result-section">
                 <h3>종합 요약</h3>
-                <p>${data.summary}</p>
+                <p>${summary}</p>
             </section>
             <section class="result-section">
                 <h3>긍정적 평가 (Pros)</h3>
-                <ul>${prosHtml}</ul>
+                <ul class="result-list">${prosHtml}</ul>
             </section>
             <section class="result-section">
                 <h3>부정적 평가 (Cons)</h3>
-                <ul>${consHtml}</ul>
+                <ul class="result-list">${consHtml}</ul>
             </section>
         `;
     }
