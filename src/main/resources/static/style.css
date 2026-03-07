@@ -602,6 +602,7 @@ input[type="text"]:focus {
     color: var(--text-sub);
     line-height: 1.5;
 }
+<<<<<<< HEAD
 /* 로딩 컨테이너: 패널 중앙 정렬 */
 .loading-container {
     display: flex;
@@ -642,6 +643,8 @@ input[type="text"]:focus {
     color: var(--text-sub);
     opacity: 0.8;
 }
+=======
+>>>>>>> origin/main
 /* =========================
    4. 반응형
 ========================= */
