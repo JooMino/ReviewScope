@@ -568,41 +568,77 @@ input[type="text"]:focus {
     min-width: 0;
 }
 
-.result-card {
-    background: var(--bg-card);
-    border-radius: 20px;
-    padding: 22px 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    margin-top: 180px; 
-    max-width:800px;
+/* =========================
+   결과 리포트 카드 레이아웃
+========================= */
+
+/* 보고서 컨테이너 */
+.report-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    animation: fadeIn 0.5s ease-in-out;
 }
 
-.result-title {
-    font-size: 20px;
-    margin-bottom: 12px;
+/* 개별 카드 (기존 .result-card 스타일 계승) */
+.report-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--shadow);
 }
 
-.result-section {
-    margin-top: 16px;
+/* 카드 제목 */
+.card-header-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-.result-section h3 {
-    font-size: 15px;
-    margin-bottom: 6px;
+.title-pros { color: var(--accent); }     /* 민트색 */
+.title-cons { color: var(--accent-red); } /* 빨간색 */
+
+/* 장단점 2열 그리드 */
+.pros-cons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
 }
 
-.result-section p,
-.result-card ul {
-    list-style: none;      /* 점 없애기 */
-    padding-left: 0;       /* 왼쪽 들여쓰기 제거 */
-    margin: 4px 0 0;
+/* 마크다운 본문 폰트 및 간격 */
+.markdown-body {
+    line-height: 1.8;
+    color: var(--text-main);
+    font-size: 14.5px;
 }
-.result-section li {
-    font-size: 13px;
-    color: var(--text-sub);
-    line-height: 1.5;
+
+/* 마크다운 강조(**) 효과 */
+.markdown-body strong {
+    color: #FFFFFF;
+    background: rgba(0, 224, 198, 0.15);
+    padding: 2px 5px;
+    border-radius: 4px;
 }
-/* 로딩 컨테이너: 패널 중앙 정렬 */
+
+.markdown-body ul { padding-left: 20px; margin-top: 10px; }
+.markdown-body li { margin-bottom: 8px; }
+
+/* 애니메이션 */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 반응형 */
+@media (max-width: 1000px) {
+    .pros-cons-grid { grid-template-columns: 1fr; }
+}
 .loading-container {
     display: flex;
     flex-direction: column;
