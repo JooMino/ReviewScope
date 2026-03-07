@@ -149,30 +149,54 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // 4. 화면에 데이터 그리기
-    function renderResult(data) {
-        const intro = data.intro || "분석된 내용이 없습니다.";
-        const prosHtml = (data.pros && data.pros.length > 0) 
-            ? data.pros.map(p => `<li>${p}</li>`).join('') 
-            : "<li>데이터 없음</li>";
-        const consHtml = (data.cons && data.cons.length > 0) 
-            ? data.cons.map(c => `<li>${c}</li>`).join('') 
-            : "<li>데이터 없음</li>";
+function renderResult(data) {
+    // 1. 기호를 지우는 간단한 함수 (에러 안 나게 방어막 침)
+    const clean = (text) => {
+        if (!text || typeof text !== 'string') return text;
+        return text.replace(/[#*]/g, '').trim();
+    };
 
-        resultContent.innerHTML = `
-            <section class="result-section">
-                <h3>종합 요약</h3>
-                <p>${intro}</p>
+    // 2. 서론(Intro) 가져오기
+    const intro = (data.intro && data.intro.length > 0) 
+        ? (Array.isArray(data.intro) ? data.intro : data.intro.split('\n')) // 배열이든 문자열이든 대응
+            .map(p => `<li>${clean(p)}</li>`) // 여기서 clean 적용
+            .join('') 
+        : "<li>데이터 없음</li>";
+    // 3. 리스트 데이터 처리 (성공한 로직 그대로 활용)
+    const prosHtml = (data.pros && data.pros.length > 0) 
+        ? (Array.isArray(data.pros) ? data.pros : data.pros.split('\n')) // 배열이든 문자열이든 대응
+            .map(p => `<li>${clean(p)}</li>`) // 여기서 clean 적용
+            .join('') 
+        : "<li>데이터 없음</li>";
+
+    const consHtml = (data.cons && data.cons.length > 0) 
+        ? (Array.isArray(data.cons) ? data.cons : data.cons.split('\n'))
+            .map(c => `<li>${clean(c)}</li>`)
+            .join('') 
+        : "<li>데이터 없음</li>";
+
+    // 4. 화면 그리기 (디자인만 살짝 보정)
+    resultContent.innerHTML = `
+        <div class="report-container" style="display: flex; flex-direction: column; gap: 20px;">
+            <section class="result-section" style="background: var(--bg-card); padding: 20px; border-radius: 12px;">
+                <h3 style="color: var(--accent);">서론</h3>
+                <p style="line-height: 1.7;">${intro}</p>
             </section>
-            <section class="result-section">
-                <h3>긍정적 평가 (Pros)</h3>
-                <ul class="result-list">${prosHtml}</ul>
-            </section>
-            <section class="result-section">
-                <h3>부정적 평가 (Cons)</h3>
-                <ul class="result-list">${consHtml}</ul>
-            </section>
-        `;
-    }
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <section class="result-section" style="background: var(--bg-card); padding: 20px; border-radius: 12px; border-left: 4px solid var(--accent);">
+                    <h3 style="color: var(--accent);">👍 긍정적 평가</h3>
+                    <ul class="result-list" style="padding-left: 20px;">${prosHtml}</ul>
+                </section>
+                
+                <section class="result-section" style="background: var(--bg-card); padding: 20px; border-radius: 12px; border-left: 4px solid var(--accent-red);">
+                    <h3 style="color: var(--accent-red);">👎 부정적 평가</h3>
+                    <ul class="result-list" style="padding-left: 20px;">${consHtml}</ul>
+                </section>
+            </div>
+        </div>
+    `;
+}
 
     // --- TOP5 관련 기존 로직 ---
     const rankingData = {
