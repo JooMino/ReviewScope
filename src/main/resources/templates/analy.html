@@ -152,20 +152,12 @@ document.addEventListener('DOMContentLoaded', function() {
 	function renderResult(data) {
 	    const resultContent = document.getElementById('resultContent');
 	
-	    // 1. 가공 함수: 기호 제거하고 줄바꿈을 HTML로 변환
-	    const cleanText = (text) => {
-	        if (!text) return "내용 없음";
-	        return text
-	            .replace(/[#*]/g, '')    // #과 * 기호 삭제
-	            .replace(/-/g, '•')      // 리스트 기호(-)를 예쁜 점(•)으로 변경
-	            .trim()
-	            .replace(/\n/g, '<br>'); // 줄바꿈 적용
-	    };
+
 	 // 데이터 안전하게 추출
-	    const intro = getCleanText(data.intro);
-	    const pros = getCleanText(data.pros);
-	    const cons = getCleanText(data.cons);
-	    const models = getCleanText(data.models)
+	    const intro = data.intro;
+	    const pros = data.pros;
+	    const cons = data.cons;
+	    const models =data.models
 	    // 2. 화면 구성 (기존 그릇 유지)
 	    resultContent.innerHTML = `
 	        <div class="analysis-report">
