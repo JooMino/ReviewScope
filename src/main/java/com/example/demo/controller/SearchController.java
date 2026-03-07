@@ -38,13 +38,16 @@ public class SearchController {
  // SearchController.java
 
 	 // 1. /search 수정: 페이지 이동 대신 키워드만 반환 (JSON)
-	 @PostMapping("/search")
-	 @ResponseBody // 페이지 이동을 막음
-	 public Map<String, String> search(@RequestParam("keyword") String keyword) {
-	     String[] sites = new String[]{"dc", "clien", "fmk", "quasar"};
-	     crawlQueue.add(keyword, sites);
-	     return Map.of("keyword", keyword, "status", "START");
-	 }
+    @PostMapping("/search")
+    @ResponseBody
+    public Map<String, String> search(@RequestParam("keyword") String keyword) {
+        // 새로운 검색을 시작하기 전에 기존 큐를 비웁니다.
+        crawlQueue.clearQueue(); 
+        
+        String[] sites = new String[]{"dc", "clien", "fmk", "quasar"};
+        crawlQueue.add(keyword, sites);
+        return Map.of("keyword", keyword, "status", "START");
+    }
 	
 	 // 2. /result 수정: 데이터만 반환하는 API 형태로 변경 (또는 Fragment 반환)
 	 @GetMapping("/api/result-data")

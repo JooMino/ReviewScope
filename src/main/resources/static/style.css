@@ -596,7 +596,7 @@ input[type="text"]:focus {
     list-style: none;      /* 점 없애기 */
     padding-left: 0;       /* 왼쪽 들여쓰기 제거 */
     margin: 4px 0 0;
-},
+}
 .result-section li {
     font-size: 13px;
     color: var(--text-sub);

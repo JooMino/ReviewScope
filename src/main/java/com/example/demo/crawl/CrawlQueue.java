@@ -16,6 +16,10 @@ public class CrawlQueue {
         jobMap.put(keyword, job);
         queue.add(job); // ⬅ 이 줄이 반드시 있어야 Python이 poll()로 가져갈 수 있습니다.
     }
+    public void clearQueue() {
+        queue.clear(); // 대기 중인 모든 작업 삭제
+        System.out.println("🧹 큐 초기화 완료 (이전 작업 삭제)");
+    }
     
     public CrawlJob poll() {
         CrawlJob job = queue.poll();
