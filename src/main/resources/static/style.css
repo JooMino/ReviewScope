@@ -587,7 +587,7 @@ input[type="text"]:focus {
 }
 
 .result-section h3 {
-    font-size: 15px;
+    font-size: 17px;
     margin-bottom: 6px;
 }
 
@@ -598,7 +598,7 @@ input[type="text"]:focus {
     margin: 4px 0 0;
 }
 .result-section li {
-    font-size: 14px;
+    font-size: 16px;
     color: var(--text-sub);
     line-height: 1.5;
 }
