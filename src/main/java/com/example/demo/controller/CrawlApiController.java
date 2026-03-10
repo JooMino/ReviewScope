@@ -26,24 +26,24 @@ public class CrawlApiController {
         if (job == null) return ResponseEntity.noContent().build();
         return ResponseEntity.ok(job);
     }
-    
+    @GetMapping("/exists")
+    public Map<String, Object> reportExists(@RequestParam("keyword") String keyword) {
+        boolean exists = crawlReportRepository.findRecentByKeyword(
+                keyword,
+                java.time.LocalDateTime.now().minusDays(7)
+        ).isPresent();
+
+        return Map.of(
+            "keyword", keyword,
+            "exists", exists
+        );
+    }
     @PostMapping("/done")
     public ResponseEntity<String> completeCrawl(@RequestBody CrawlResultRequest request) {
         CrawlJob job = crawlQueue.get(request.getKeyword());
         
         if (job != null) {
             String keyword = request.getKeyword();
-            
-            // ★★★ 7일 이내 데이터 중복 체크 ★★★
-            LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
-            Optional<CrawlReport> recentReport = crawlReportRepository.findRecentByKeyword(keyword, sevenDaysAgo);
-            
-            if (recentReport.isPresent()) {
-                System.out.println("중복 스킵 7일 이내 데이터 존재: " + keyword + 
-                                 " (저장시간: " + recentReport.get().getCreatedAt() + ")");
-                job.setStatus(CrawlJob.Status.DONE);
-                return ResponseEntity.ok("Skipped (7일 이내 데이터 존재)");
-            }
             
             // ★★★ 정상 처리 ★★★
             if ("FAIL".equalsIgnoreCase(request.getStatus())) {
