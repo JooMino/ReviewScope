@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const analyzeForm = document.getElementById('analyzeForm');
     const resultContent = document.getElementById('resultContent');
     const keywordInput = document.getElementById('keywordInput');
-
+    
     // 1. 분석 시작 버튼 클릭(폼 제출) 시 실행
     if (analyzeForm) {
         analyzeForm.addEventListener('submit', function(e) {
@@ -148,16 +148,15 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    // 4. 화면에 데이터 그리기
 	function renderResult(data) {
 
-	    // 1. 기호를 지우는 간단한 함수 (에러 안 나게 방어막 침)
+	    // 1. 기호를 지우는 간단한 함수
 	    const clean = (text) => {
 	        if (!text || typeof text !== 'string') return text;
 	        return text.replace(/[#*]/g, '').trim();
 	    };
 
-	    // 3. 리스트 데이터 처리 (성공한 로직 그대로 활용)
+	    // 3. 리스트 데이터 처리
 	    const prosHtml = (data.pros && data.pros.length > 0) 
 	        ? (Array.isArray(data.pros) ? data.pros : data.pros.split('\n')) // 배열이든 문자열이든 대응
 	            .map(p => `<li>${clean(p)}</li>`) // 여기서 clean 적용

@@ -18,10 +18,7 @@ public class MdReportParser {
             sections.put("summary", content);
             sections.put("pros", extractByKeyword(content, "- **장점**:"));
             sections.put("cons", extractByKeyword(content, "- **단점**:"));
-            
-            // 모델 섹션은 헤더(####)일 수도 있고 리스트(- **)일 수도 있음 -> 둘 다 시도
-            String models = extractByKeyword(content, "#### 함께 언급된 모델");
-            sections.put("models", models);
+            sections.put("models", extractByKeyword(content, "#### 함께 언급된 모델"));
 
         } catch (IOException e) {
             e.printStackTrace();
