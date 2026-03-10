@@ -1,13 +1,9 @@
 package com.example.demo.controller;
 
-
-import com.example.demo.crawl.CrawlJob;
-import com.example.demo.crawl.CrawlQueue;
-
-
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import com.example.demo.crawl.*;
+import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,9 +13,11 @@ import org.springframework.web.bind.annotation.*;
 public class CrawlApiController {
 
     private final CrawlQueue crawlQueue;
+    private final CrawlReportRepository crawlReportRepository;
 
-    public CrawlApiController(CrawlQueue crawlQueue) {
+    public CrawlApiController(CrawlQueue crawlQueue, CrawlReportRepository crawlReportRepository) {
         this.crawlQueue = crawlQueue;
+        this.crawlReportRepository = crawlReportRepository;
     }
 
     @GetMapping("/next")
@@ -34,37 +32,56 @@ public class CrawlApiController {
         CrawlJob job = crawlQueue.get(request.getKeyword());
         
         if (job != null) {
-            // 1. 실패 처리
+            String keyword = request.getKeyword();
+            
+            // ★★★ 7일 이내 데이터 중복 체크 ★★★
+            LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
+            Optional<CrawlReport> recentReport = crawlReportRepository.findRecentByKeyword(keyword, sevenDaysAgo);
+            
+            if (recentReport.isPresent()) {
+                System.out.println("중복 스킵 7일 이내 데이터 존재: " + keyword + 
+                                 " (저장시간: " + recentReport.get().getCreatedAt() + ")");
+                job.setStatus(CrawlJob.Status.DONE);
+                return ResponseEntity.ok("Skipped (7일 이내 데이터 존재)");
+            }
+            
+            // ★★★ 정상 처리 ★★★
             if ("FAIL".equalsIgnoreCase(request.getStatus())) {
                 job.setStatus(CrawlJob.Status.FAILED);
-                System.out.println("❌ 실패 처리됨: " + request.getKeyword());
+                saveToDb(keyword, null, CrawlJob.Status.FAILED);
+                System.out.println("❌ 실패 처리: " + keyword);
                 return ResponseEntity.ok("Marked as FAILED");
             }
 
-            // 2. 성공 처리
             job.setStatus(CrawlJob.Status.DONE);
-            
-            // ★★★ [여기 추가] MD 파일 저장 로직 ★★★
-            if (request.getReportContent() != null && !request.getReportContent().isEmpty()) {
-                saveMdFile(request.getKeyword(), request.getReportContent());
-            }
-
-            return ResponseEntity.ok("Done & Saved (MD)");
+            saveToDb(keyword, request.getReportContent(), CrawlJob.Status.DONE);
+            System.out.println(" 신규 데이터 저장: " + keyword);
+            return ResponseEntity.ok("Done & Saved to DB");
         }
         
         return ResponseEntity.status(404).body("Job not found");
     }
 
-    // 파일 저장 메서드
-    private void saveMdFile(String keyword, String content) {
+    // DB 저장 메서드 (upsert)
+    private void saveToDb(String keyword, String content, CrawlJob.Status status) {
         try {
-            String folderPath = "data_storage/" + keyword;
-            Files.createDirectories(Paths.get(folderPath));
-            String filePath = folderPath + "/" + keyword + "_report.md";
-            Files.write(Paths.get(filePath), content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            System.out.println("✅ 리포트 저장 완료: " + filePath);
+            crawlReportRepository.findByKeyword(keyword)
+                .ifPresentOrElse(
+                    existing -> {
+                        existing.setReportContent(content);
+                        existing.setStatus(status);
+                        existing.setCreatedAt(LocalDateTime.now());
+                        crawlReportRepository.save(existing);
+                        System.out.println("기존 데이터 업데이트: " + keyword);
+                    },
+                    () -> {
+                        CrawlReport report = new CrawlReport(keyword, content, status);
+                        crawlReportRepository.save(report);
+                        System.out.println(" 신규 데이터 생성: " + keyword);
+                    }
+                );
         } catch (Exception e) {
-            System.err.println("❌ 저장 실패: " + e.getMessage());
+            System.err.println("❌ DB 저장 실패 [" + keyword + "]: " + e.getMessage());
         }
     }
     
@@ -77,4 +94,16 @@ public class CrawlApiController {
         return Map.of("status", job.getStatus().name());
     }
 
+    // 리포트 조회 API
+    @GetMapping("/report")
+    public ResponseEntity<?> getReport(@RequestParam("keyword") String keyword) {
+        return crawlReportRepository.findByKeyword(keyword)
+            .map(report -> ResponseEntity.ok(Map.of(
+                "keyword", report.getKeyword(),
+                "status", report.getStatus().name(),
+                "reportContent", report.getReportContent(),
+                "createdAt", report.getCreatedAt()
+            )))
+            .orElse(ResponseEntity.noContent().build());
+    }
 }
