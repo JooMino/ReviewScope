@@ -1,9 +1,9 @@
 package com.example.demo.controller;
 
-import com.example.demo.crawl.CrawlQueue;
 import com.example.demo.crawl.CrawlJob;
+import com.example.demo.crawl.CrawlQueue;
+import com.example.demo.crawl.CrawlReport;
 import com.example.demo.crawl.CrawlReportRepository;
-import com.example.demo.util.MdReportParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Controller;
@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Controller
 public class SearchController {
@@ -45,7 +47,11 @@ public class SearchController {
 
         String[] sites = new String[]{"dc", "clien", "fmk", "quasar"};
         crawlQueue.add(keyword, sites);
-        return Map.of("keyword", keyword, "status", "START");
+
+        return Map.of(
+            "keyword", keyword,
+            "status", "START"
+        );
     }
 
     @GetMapping("/api/result-data")
@@ -53,55 +59,91 @@ public class SearchController {
     public Map<String, Object> getResultData(@RequestParam("keyword") String keyword) {
         CrawlJob job = crawlQueue.get(keyword);
         if (job == null || job.getStatus() != CrawlJob.Status.DONE) {
-            return Map.of("error", "NOT_READY");
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "NOT_READY");
+            return error;
         }
 
-        return crawlReportRepository.findByKeyword(keyword)
-            .map(report -> {
-                String reportContent = report.getReportContent();
+        Optional<CrawlReport> optionalReport = crawlReportRepository.findByKeyword(keyword);
+        if (optionalReport.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "NO_REPORT");
+            return error;
+        }
 
-                try {
-                    JsonNode root = objectMapper.readTree(reportContent);
+        CrawlReport report = optionalReport.get();
+        String reportContent = report.getReportContent();
 
-                    String positiveSummary = root.path("positive").path("synthesis").asText();
-                    String negativeSummary = root.path("negative").path("synthesis").asText();
+        if (reportContent == null || reportContent.trim().isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "EMPTY_REPORT");
+            return error;
+        }
 
-                    List<String> pros = new ArrayList<>();
-                    for (JsonNode node : root.path("positive").path("key_points")) {
-                        pros.add(node.path("point").asText());
-                    }
+        try {
+            JsonNode root = objectMapper.readTree(reportContent);
 
-                    List<String> cons = new ArrayList<>();
-                    for (JsonNode node : root.path("negative").path("key_points")) {
-                        cons.add(node.path("point").asText());
-                    }
+            String summary = root.path("keyword").asText();
+            if (summary == null || summary.trim().isEmpty()) {
+                summary = keyword;
+            }
 
-                    List<String> models = new ArrayList<>();
-                    for (JsonNode node : root.path("other_products")) {
-                        String name = node.path("product_name").asText();
-                        String context = node.path("context").asText();
-                        models.add(name + " - " + context);
-                    }
+            String positiveSummary = root.path("positive").path("synthesis").asText();
+            if (positiveSummary == null || positiveSummary.trim().isEmpty()) {
+                positiveSummary = "내용 없음";
+            }
 
-                    return Map.of(
-                    	"summary", root.path("keyword").asText(),
-                        "positiveSummary", positiveSummary,
-                        "negativeSummary", negativeSummary,
-                        "pros", pros,
-                        "cons", cons,
-                        "models", models
-                    );
-                } catch (Exception e) {
-                    // 혹시 예전 md 데이터면 fallback
-                    Map<String, String> reportData = MdReportParser.parseReport("data_storage/" + keyword + "/" + keyword + "_report.md");
-                    return Map.of(
-                        "summary", reportData.getOrDefault("summary", "내용 없음"),
-                        "pros", reportData.getOrDefault("pros", "").lines().toList(),
-                        "cons", reportData.getOrDefault("cons", "").lines().toList(),
-                        "models", reportData.getOrDefault("models", "").lines().toList()
-                    );
+            String negativeSummary = root.path("negative").path("synthesis").asText();
+            if (negativeSummary == null || negativeSummary.trim().isEmpty()) {
+                negativeSummary = "내용 없음";
+            }
+
+            List<String> pros = new ArrayList<>();
+            for (JsonNode node : root.path("positive").path("key_points")) {
+                String point = node.path("point").asText();
+                if (point != null && !point.trim().isEmpty()) {
+                    pros.add(point);
                 }
-            })
-            .orElse(Map.of("error", "NO_REPORT"));
+            }
+
+            List<String> cons = new ArrayList<>();
+            for (JsonNode node : root.path("negative").path("key_points")) {
+                String point = node.path("point").asText();
+                if (point != null && !point.trim().isEmpty()) {
+                    cons.add(point);
+                }
+            }
+
+            List<String> models = new ArrayList<>();
+            for (JsonNode node : root.path("other_products")) {
+                String name = node.path("product_name").asText();
+                String context = node.path("context").asText();
+
+                boolean hasName = name != null && !name.trim().isEmpty();
+                boolean hasContext = context != null && !context.trim().isEmpty();
+
+                if (hasName && hasContext) {
+                    models.add(name + " - " + context);
+                } else if (hasName) {
+                    models.add(name);
+                }
+            }
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("summary", summary);
+            result.put("positiveSummary", positiveSummary);
+            result.put("negativeSummary", negativeSummary);
+            result.put("pros", pros);
+            result.put("cons", cons);
+            result.put("models", models);
+
+            return result;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "JSON_PARSE_FAILED");
+            return error;
+        }
     }
 }

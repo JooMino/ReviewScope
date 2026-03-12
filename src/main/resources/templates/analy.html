@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>ReviewScope - 분석</title>
     <link rel="stylesheet" href="/style.css">
-    
 </head>
 <body>
 <div class="left-sidebar">
@@ -86,16 +85,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const analyzeForm = document.getElementById('analyzeForm');
     const resultContent = document.getElementById('resultContent');
     const keywordInput = document.getElementById('keywordInput');
-    
-    // 1. 분석 시작 버튼 클릭(폼 제출) 시 실행
+
     if (analyzeForm) {
         analyzeForm.addEventListener('submit', function(e) {
-            e.preventDefault(); // 페이지 이동 차단
+            e.preventDefault();
 
             const keyword = keywordInput.value.trim();
             if (!keyword) return;
 
-            // 오른쪽 패널을 로딩 상태로 변경
             resultContent.innerHTML = `
                 <div class="loading-container">
                     <p><strong>"${keyword}"</strong> 분석 중...</p>
@@ -104,16 +101,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
 
-            // 서버에 비동기(Fetch) 요청
             fetch('/search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ 'keyword': keyword })
+                body: new URLSearchParams({ keyword: keyword })
             })
             .then(res => res.json())
             .then(data => {
                 console.log("분석 시작 응답:", data);
-                checkStatus(data.keyword); // 상태 체크(폴링) 시작
+                checkStatus(data.keyword);
             })
             .catch(err => {
                 console.error("요청 실패:", err);
@@ -122,7 +118,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 2. 상태 체크 (폴링)
     function checkStatus(keyword) {
         const interval = setInterval(() => {
             fetch(`/api/crawl/status?keyword=${encodeURIComponent(keyword)}`)
@@ -130,40 +125,58 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(data => {
                     if (data.status === 'DONE') {
                         clearInterval(interval);
-                        fetchFinalResult(keyword); // 결과 데이터 가져오기
+                        fetchFinalResult(keyword);
                     } else if (data.status === 'FAILED') {
                         clearInterval(interval);
                         resultContent.innerHTML = `<p style="color:red;">분석에 실패했습니다.</p>`;
                     }
+                })
+                .catch(err => {
+                    clearInterval(interval);
+                    console.error("상태 체크 실패:", err);
+                    resultContent.innerHTML = `<p style="color:red;">상태 확인 중 오류가 발생했습니다.</p>`;
                 });
         }, 2000);
     }
 
-    // 3. 최종 데이터 가져오기
     function fetchFinalResult(keyword) {
         fetch(`/api/result-data?keyword=${encodeURIComponent(keyword)}`)
             .then(res => res.json())
             .then(data => {
                 renderResult(data);
+            })
+            .catch(err => {
+                console.error("결과 조회 실패:", err);
+                resultContent.innerHTML = `<p style="color:red;">결과를 불러오지 못했습니다.</p>`;
             });
     }
 
     function renderResult(data) {
+        if (data.error) {
+            resultContent.innerHTML = `<p style="color:red;">${data.error}</p>`;
+            return;
+        }
+
         const clean = (text) => {
-            if (!text || typeof text !== 'string') return text;
+            if (text == null) return '';
+            if (typeof text !== 'string') return text;
             return text.replace(/[#*]/g, '').trim();
         };
 
-        const prosHtml = (data.pros && data.pros.length > 0)
-            ? data.pros.map(p => `<li>${clean(p)}</li>`).join('')
+        const pros = Array.isArray(data.pros) ? data.pros : [];
+        const cons = Array.isArray(data.cons) ? data.cons : [];
+        const models = Array.isArray(data.models) ? data.models : [];
+
+        const prosHtml = pros.length > 0
+            ? pros.map(p => `<li>${clean(p)}</li>`).join('')
             : "<li>데이터 없음</li>";
 
-        const consHtml = (data.cons && data.cons.length > 0)
-            ? data.cons.map(c => `<li>${clean(c)}</li>`).join('')
+        const consHtml = cons.length > 0
+            ? cons.map(c => `<li>${clean(c)}</li>`).join('')
             : "<li>데이터 없음</li>";
 
-        const modelsHtml = (data.models && data.models.length > 0)
-            ? data.models.map(m => `<li>${clean(m)}</li>`).join('')
+        const modelsHtml = models.length > 0
+            ? models.map(m => `<li>${clean(m)}</li>`).join('')
             : "<li>언급된 모델 없음</li>";
 
         resultContent.innerHTML = `
@@ -177,13 +190,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <section class="result-section" style="background: var(--bg-card); padding: 20px; border-radius: 12px; border-left: 4px solid var(--accent);">
                         <h3 style="color: var(--accent);">👍 장점</h3>
-                        <p style="margin-bottom: 12px;">${clean(data.positiveSummary || '')}</p>
+                        <p style="margin-bottom: 12px;">${clean(data.positiveSummary || '내용 없음')}</p>
                         <ul class="result-list" style="padding-left: 20px;">${prosHtml}</ul>
                     </section>
 
                     <section class="result-section" style="background: var(--bg-card); padding: 20px; border-radius: 12px; border-left: 4px solid var(--accent-red);">
                         <h3 style="color: var(--accent-red);">👎 단점</h3>
-                        <p style="margin-bottom: 12px;">${clean(data.negativeSummary || '')}</p>
+                        <p style="margin-bottom: 12px;">${clean(data.negativeSummary || '내용 없음')}</p>
                         <ul class="result-list" style="padding-left: 20px;">${consHtml}</ul>
                     </section>
                 </div>
@@ -198,7 +211,6 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
 
-    // --- TOP5 관련 기존 로직 ---
     const rankingData = {
         mouse: [
             { rank: 1, name: "로지텍 G PRO X SUPERLIGHT 2"},
@@ -245,6 +257,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const list = rankingData[category] || [];
         top5TitleEl.textContent = titleMap[category] || 'TOP 5';
         top5ListEl.innerHTML = '';
+
         list.forEach(item => {
             const li = document.createElement('li');
             li.className = 'top5-item';
