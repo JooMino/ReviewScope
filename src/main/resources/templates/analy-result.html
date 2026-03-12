@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ReviewScope - 분석 결과</title>
+    <link rel="stylesheet" href="/style.css">
+	<link rel="stylesheet" href="/result.css">
+</head>
+<body>
+<div class="left-sidebar">
+    <div class="brand">
+        Review<span>Scope</span>
+    </div>
+    <ul class="menu-list">
+        <li><a class="menu-item" th:href="@{/}">홈</a></li>
+        <li><a class="menu-item active" th:href="@{/analyze}">분석</a></li>
+        <li><a class="menu-item">분석 기록</a></li>
+        <li><a class="menu-item">설정</a></li>
+    </ul>
+</div>
+
+<div class="main-container analyze-result-layout">
+    <!-- 좌측 사이드 필터/검색 -->
+    <aside class="result-sidebar">
+        <section class="section-card result-search-card">
+            <div class="result-search-label">다른 키워드 분석</div>
+            <form id="resultSearchForm" class="result-search-form">
+                <input
+                    type="text"
+                    id="keywordInput"
+                    name="keyword"
+                    placeholder="제품명 또는 키워드 입력"
+                    th:value="${keyword}"
+                    required
+                >
+                <button type="submit" class="btn-submit">다시 분석</button>
+            </form>
+            <p class="tip">예: 로지텍 G304, WH-1000XM5</p>
+        </section>
+
+        <section class="section-card result-filter-card">
+            <h3 class="filter-title">분석 조건</h3>
+
+            <div class="filter-group">
+                <label class="filter-label">키워드</label>
+                <div class="filter-value" id="currentKeyword" th:text="${keyword}">로지텍 G304</div>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">수집 기간</label>
+                <div class="filter-chip-group">
+                    <button type="button" class="filter-chip active">최근 7일</button>
+                    <button type="button" class="filter-chip">최근 30일</button>
+                    <button type="button" class="filter-chip">최근 90일</button>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">사이트</label>
+                <div class="site-check-list">
+                    <label class="site-check"><input type="checkbox" checked disabled> DC</label>
+                    <label class="site-check"><input type="checkbox" checked disabled> 클리앙</label>
+                    <label class="site-check"><input type="checkbox" checked disabled> 펨코</label>
+                    <label class="site-check"><input type="checkbox" checked disabled> 퀘이사존</label>
+                </div>
+            </div>
+        </section>
+
+        <section class="section-card result-summary-mini">
+            <div class="mini-stat">
+                <span class="mini-stat-label">분석 상태</span>
+                <strong class="mini-stat-value" id="jobStatus">분석 중</strong>
+            </div>
+            <div class="mini-stat">
+                <span class="mini-stat-label">데이터 소스</span>
+                <strong class="mini-stat-value">4개 커뮤니티</strong>
+            </div>
+        </section>
+    </aside>
+
+    <!-- 우측 메인 대시보드 -->
+    <main class="result-main">
+        <header class="result-page-header">
+            <div>
+                <p class="result-page-path">분석 / 결과</p>
+                <h1 id="pageTitle">
+                    <span th:text="${keyword}">로지텍 G304</span> 커뮤니티 분석 결과
+                </h1>
+                <p class="result-page-desc">
+                    커뮤니티 게시글 기반으로 장점, 단점, 주요 이슈, 함께 언급된 제품을 정리합니다.
+                </p>
+            </div>
+        </header>
+
+        <section class="result-hero-grid">
+            <div class="section-card hero-keyword-card">
+                <div class="hero-card-label">분석 키워드</div>
+                <div class="hero-keyword" id="heroKeyword" th:text="${keyword}">로지텍 G304</div>
+                <p class="hero-subtext">JSON 리포트 기반 핵심 결과를 요약해서 보여줍니다.</p>
+            </div>
+
+            <div class="section-card hero-status-card">
+                <div class="hero-card-label">진행 상태</div>
+                <div class="hero-status" id="heroStatus">대기 중</div>
+                <p class="hero-subtext" id="heroStatusText">작업 큐와 DB 상태를 확인하고 있습니다.</p>
+            </div>
+        </section>
+
+        <div id="loadingSection" class="section-card dashboard-loading-card">
+            <div class="loading-container">
+                <p><strong id="loadingKeyword" th:text="${keyword}">로지텍 G304</strong> 분석 중...</p>
+                <div class="spinner"></div>
+                <p class="tip">커뮤니티 데이터를 수집하고 리포트를 생성하고 있습니다.</p>
+            </div>
+        </div>
+
+        <div id="dashboardSection" class="dashboard-section" style="display:none;">
+            <section class="dashboard-grid top-grid">
+                <article class="section-card dashboard-card">
+                    <div class="dashboard-card-header">
+                        <h2>한줄 요약</h2>
+                    </div>
+                    <p class="summary-text" id="summaryText">결과를 불러오는 중입니다.</p>
+                </article>
+
+                <article class="section-card dashboard-card">
+                    <div class="dashboard-card-header">
+                        <h2>함께 언급된 모델</h2>
+                    </div>
+                    <ul class="simple-list" id="modelsList">
+                        <li>불러오는 중...</li>
+                    </ul>
+                </article>
+            </section>
+
+            <section class="dashboard-grid sentiment-grid">
+                <article class="section-card dashboard-card pros-card">
+                    <div class="dashboard-card-header">
+                        <h2>👍 장점 요약</h2>
+                    </div>
+                    <p class="sentiment-summary" id="positiveSummary">불러오는 중...</p>
+                    <ul class="bullet-list" id="prosList">
+                        <li>불러오는 중...</li>
+                    </ul>
+                </article>
+
+                <article class="section-card dashboard-card cons-card">
+                    <div class="dashboard-card-header">
+                        <h2>👎 단점 요약</h2>
+                    </div>
+                    <p class="sentiment-summary" id="negativeSummary">불러오는 중...</p>
+                    <ul class="bullet-list" id="consList">
+                        <li>불러오는 중...</li>
+                    </ul>
+                </article>
+            </section>
+
+            <section class="dashboard-grid chart-grid">
+                <article class="section-card dashboard-card">
+                    <div class="dashboard-card-header">
+                        <h2>📊 주요 이슈 비율</h2>
+                        <span class="card-badge">예시 UI</span>
+                    </div>
+                    <div class="mock-chart-list">
+                        <div class="bar-row">
+                            <div class="bar-meta"><span>불량 이슈</span><strong>18%</strong></div>
+                            <div class="bar-track"><div class="bar-fill" style="width:18%;"></div></div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-meta"><span>배터리 문제</span><strong>26%</strong></div>
+                            <div class="bar-track"><div class="bar-fill" style="width:26%;"></div></div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-meta"><span>착용감 압박</span><strong>14%</strong></div>
+                            <div class="bar-track"><div class="bar-fill" style="width:14%;"></div></div>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="section-card dashboard-card">
+                    <div class="dashboard-card-header">
+                        <h2>📈 비교 제품 언급량</h2>
+                        <span class="card-badge">예시 UI</span>
+                    </div>
+                    <div class="mock-chart-list gold">
+                        <div class="bar-row">
+                            <div class="bar-meta"><span>QCY H3</span><strong>32%</strong></div>
+                            <div class="bar-track"><div class="bar-fill gold-fill" style="width:32%;"></div></div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-meta"><span>앤커 Q45</span><strong>24%</strong></div>
+                            <div class="bar-track"><div class="bar-fill gold-fill" style="width:24%;"></div></div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-meta"><span>CH720N</span><strong>16%</strong></div>
+                            <div class="bar-track"><div class="bar-fill gold-fill" style="width:16%;"></div></div>
+                        </div>
+                    </div>
+                </article>
+            </section>
+
+            <section class="section-card dashboard-card">
+                <div class="dashboard-card-header">
+                    <h2>🔗 장단점 근거 링크</h2>
+                    <span class="card-badge">예시 UI</span>
+                </div>
+                <div class="reference-list">
+                    <div class="reference-item">
+                        <strong>착용감이 타이트하다는 의견</strong>
+                        <p>디시 / 클리앙 / 퀘이사존 링크 영역</p>
+                    </div>
+                    <div class="reference-item">
+                        <strong>배터리 지속시간이 짧다는 의견</strong>
+                        <p>펨코 / 디시 링크 영역</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section-card dashboard-card">
+                <div class="dashboard-card-header">
+                    <h2>⏱ 시간에 따른 평가 변화</h2>
+                    <span class="card-badge">예시 UI</span>
+                </div>
+                <div class="timeline-chart">
+                    <div class="timeline-bar"><div class="timeline-fill h35"></div><span>1주차</span></div>
+                    <div class="timeline-bar"><div class="timeline-fill h55"></div><span>2주차</span></div>
+                    <div class="timeline-bar"><div class="timeline-fill h48"></div><span>3주차</span></div>
+                    <div class="timeline-bar"><div class="timeline-fill h62"></div><span>4주차</span></div>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const keywordInput = document.getElementById('keywordInput');
+    const resultSearchForm = document.getElementById('resultSearchForm');
+
+    const loadingSection = document.getElementById('loadingSection');
+    const dashboardSection = document.getElementById('dashboardSection');
+
+    const summaryText = document.getElementById('summaryText');
+    const positiveSummary = document.getElementById('positiveSummary');
+    const negativeSummary = document.getElementById('negativeSummary');
+    const prosList = document.getElementById('prosList');
+    const consList = document.getElementById('consList');
+    const modelsList = document.getElementById('modelsList');
+
+    const heroKeyword = document.getElementById('heroKeyword');
+    const pageTitle = document.getElementById('pageTitle');
+    const currentKeyword = document.getElementById('currentKeyword');
+    const loadingKeyword = document.getElementById('loadingKeyword');
+
+    const heroStatus = document.getElementById('heroStatus');
+    const heroStatusText = document.getElementById('heroStatusText');
+    const jobStatus = document.getElementById('jobStatus');
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const keyword = urlParams.get('keyword');
+
+    if (!keyword) {
+        loadingSection.style.display = 'none';
+        dashboardSection.style.display = 'block';
+        summaryText.textContent = '잘못된 접근입니다. 분석 키워드가 없습니다.';
+        return;
+    }
+
+    keywordInput.value = keyword;
+    heroKeyword.textContent = keyword;
+    currentKeyword.textContent = keyword;
+    loadingKeyword.textContent = keyword;
+    pageTitle.innerHTML = `${keyword} 커뮤니티 분석 결과`;
+
+    resultSearchForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const newKeyword = keywordInput.value.trim();
+        if (!newKeyword) return;
+        window.location.href = `/analyze/result?keyword=${encodeURIComponent(newKeyword)}`;
+    });
+
+    function clean(text) {
+        if (text == null) return '';
+        if (typeof text !== 'string') return text;
+        return text.replace(/[#*]/g, '').trim();
+    }
+
+    function renderList(target, items, emptyText) {
+        if (!Array.isArray(items) || items.length === 0) {
+            target.innerHTML = `<li>${emptyText}</li>`;
+            return;
+        }
+        target.innerHTML = items.map(item => `<li>${clean(item)}</li>`).join('');
+    }
+
+    function fetchFinalResult(keyword) {
+        fetch(`/api/result-data?keyword=${encodeURIComponent(keyword)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    heroStatus.textContent = '결과 없음';
+                    heroStatusText.textContent = data.error;
+                    jobStatus.textContent = '실패';
+
+                    loadingSection.style.display = 'none';
+                    dashboardSection.style.display = 'block';
+                    summaryText.textContent = `결과를 불러오지 못했습니다. (${data.error})`;
+                    return;
+                }
+
+                heroStatus.textContent = '완료';
+                heroStatusText.textContent = '리포트 로딩이 완료되었습니다.';
+                jobStatus.textContent = '완료';
+
+                summaryText.textContent = clean(data.summary || keyword);
+                positiveSummary.textContent = clean(data.positiveSummary || '내용 없음');
+                negativeSummary.textContent = clean(data.negativeSummary || '내용 없음');
+
+                renderList(prosList, data.pros, '장점 데이터 없음');
+                renderList(consList, data.cons, '단점 데이터 없음');
+                renderList(modelsList, data.models, '언급된 모델 없음');
+
+                loadingSection.style.display = 'none';
+                dashboardSection.style.display = 'block';
+            })
+            .catch(err => {
+                console.error(err);
+                heroStatus.textContent = '오류';
+                heroStatusText.textContent = '결과 조회 중 오류가 발생했습니다.';
+                jobStatus.textContent = '오류';
+
+                loadingSection.style.display = 'none';
+                dashboardSection.style.display = 'block';
+                summaryText.textContent = '결과를 불러오지 못했습니다.';
+            });
+    }
+
+    function checkStatus(keyword) {
+        heroStatus.textContent = '분석 중';
+        heroStatusText.textContent = '작업 큐 상태를 확인하고 있습니다.';
+        jobStatus.textContent = '분석 중';
+
+        const interval = setInterval(() => {
+            fetch(`/api/crawl/status?keyword=${encodeURIComponent(keyword)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'DONE') {
+                        clearInterval(interval);
+                        fetchFinalResult(keyword);
+                    } else if (data.status === 'FAILED') {
+                        clearInterval(interval);
+                        heroStatus.textContent = '실패';
+                        heroStatusText.textContent = '분석 작업이 실패했습니다.';
+                        jobStatus.textContent = '실패';
+
+                        loadingSection.style.display = 'none';
+                        dashboardSection.style.display = 'block';
+                        summaryText.textContent = '분석에 실패했습니다.';
+                    } else {
+                        heroStatus.textContent = '분석 중';
+                        heroStatusText.textContent = '커뮤니티 데이터를 수집 중입니다.';
+                        jobStatus.textContent = '분석 중';
+                    }
+                })
+                .catch(err => {
+                    clearInterval(interval);
+                    console.error(err);
+
+                    heroStatus.textContent = '오류';
+                    heroStatusText.textContent = '상태 확인 중 오류가 발생했습니다.';
+                    jobStatus.textContent = '오류';
+
+                    loadingSection.style.display = 'none';
+                    dashboardSection.style.display = 'block';
+                    summaryText.textContent = '상태 확인 중 오류가 발생했습니다.';
+                });
+        }, 2000);
+    }
+
+    checkStatus(keyword);
+});
+</script>
+</body>
+</html>

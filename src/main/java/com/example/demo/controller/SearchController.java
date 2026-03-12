@@ -7,6 +7,7 @@ import com.example.demo.crawl.CrawlReportRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -39,7 +40,11 @@ public class SearchController {
     public String analyzePage() {
         return "analy";
     }
-
+    @GetMapping("/analyze/result")
+    public String analyzeResultPage(@RequestParam("keyword") String keyword, Model model) {
+        model.addAttribute("keyword", keyword);
+        return "analy-result";
+    }
     @PostMapping("/search")
     @ResponseBody
     public Map<String, String> search(@RequestParam("keyword") String keyword) {
