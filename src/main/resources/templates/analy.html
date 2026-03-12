@@ -179,38 +179,162 @@ document.addEventListener('DOMContentLoaded', function() {
             ? models.map(m => `<li>${clean(m)}</li>`).join('')
             : "<li>언급된 모델 없음</li>";
 
-        resultContent.innerHTML = `
-            <div class="report-container" style="display: flex; flex-direction: column; gap: 20px;">
+        // 아직 백엔드 안 붙은 기능은 예시용 mock 데이터
+        const mockIssues = [
+            { label: "불량 이슈", percent: 18 },
+            { label: "배터리 문제", percent: 26 },
+            { label: "착용감 압박", percent: 14 },
+            { label: "노이즈 캔슬링", percent: 22 }
+        ];
 
-                <section class="result-section" style="background: var(--bg-card); padding: 20px; border-radius: 12px;">
-                    <h3 style="margin-bottom: 8px;">📌 분석 키워드</h3>
-                    <p style="margin: 0;">${clean(data.summary || '내용 없음')}</p>
+        const mockIssueHtml = mockIssues.map(issue => `
+            <div style="margin-bottom: 14px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                    <span>${issue.label}</span>
+                    <strong>${issue.percent}%</strong>
+                </div>
+                <div style="background:#2a2d34; border-radius:999px; height:10px; overflow:hidden;">
+                    <div style="width:${issue.percent}%; height:100%; background:var(--accent);"></div>
+                </div>
+            </div>
+        `).join('');
+
+        const mockReferenceHtml = `
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <div style="padding:12px; border-radius:10px; background:rgba(255,255,255,0.03);">
+                    <strong>예시) 착용감이 머리 큰 사용자에게 타이트하다는 의견</strong>
+                    <div style="margin-top:8px; font-size:14px; opacity:0.85;">
+                        - 디시 링크 예시<br>
+                        - 클리앙 링크 예시<br>
+                        - 퀘이사존 링크 예시
+                    </div>
+                </div>
+                <div style="padding:12px; border-radius:10px; background:rgba(255,255,255,0.03);">
+                    <strong>예시) 배터리 지속시간이 기대보다 짧다는 의견</strong>
+                    <div style="margin-top:8px; font-size:14px; opacity:0.85;">
+                        - 펨코 링크 예시<br>
+                        - 디시 링크 예시
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const mockModelChartHtml = `
+            <div style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">
+                <div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                        <span>QCY H3</span><strong>32%</strong>
+                    </div>
+                    <div style="background:#2a2d34; border-radius:999px; height:10px; overflow:hidden;">
+                        <div style="width:32%; height:100%; background:#FFD700;"></div>
+                    </div>
+                </div>
+                <div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                        <span>앤커 Q45</span><strong>24%</strong>
+                    </div>
+                    <div style="background:#2a2d34; border-radius:999px; height:10px; overflow:hidden;">
+                        <div style="width:24%; height:100%; background:#FFD700;"></div>
+                    </div>
+                </div>
+                <div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                        <span>CH720N</span><strong>16%</strong>
+                    </div>
+                    <div style="background:#2a2d34; border-radius:999px; height:10px; overflow:hidden;">
+                        <div style="width:16%; height:100%; background:#FFD700;"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const mockTimelineHtml = `
+            <div style="margin-top:10px;">
+                <div style="display:flex; align-items:flex-end; gap:10px; height:180px;">
+                    <div style="flex:1; background:#3a7afe; height:35%; border-radius:8px 8px 0 0; position:relative;">
+                        <span style="position:absolute; bottom:-26px; left:50%; transform:translateX(-50%); font-size:12px;">1주차</span>
+                    </div>
+                    <div style="flex:1; background:#3a7afe; height:55%; border-radius:8px 8px 0 0; position:relative;">
+                        <span style="position:absolute; bottom:-26px; left:50%; transform:translateX(-50%); font-size:12px;">2주차</span>
+                    </div>
+                    <div style="flex:1; background:#3a7afe; height:48%; border-radius:8px 8px 0 0; position:relative;">
+                        <span style="position:absolute; bottom:-26px; left:50%; transform:translateX(-50%); font-size:12px;">3주차</span>
+                    </div>
+                    <div style="flex:1; background:#3a7afe; height:62%; border-radius:8px 8px 0 0; position:relative;">
+                        <span style="position:absolute; bottom:-26px; left:50%; transform:translateX(-50%); font-size:12px;">4주차</span>
+                    </div>
+                </div>
+                <p style="margin-top:36px; font-size:13px; opacity:0.8;">
+                    예시 그래프: 시간에 따른 긍정/부정 또는 이슈 언급량 추이를 표시할 예정
+                </p>
+            </div>
+        `;
+
+        resultContent.innerHTML = `
+            <div class="report-container" style="display:flex; flex-direction:column; gap:20px;">
+
+                <!-- 실제 데이터 -->
+                <section class="result-section" style="background:var(--bg-card); padding:20px; border-radius:12px;">
+                    <h3 style="margin-bottom:8px;">📌 분석 키워드</h3>
+                    <p style="margin:0;">${clean(data.summary || '내용 없음')}</p>
                 </section>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <section class="result-section" style="background: var(--bg-card); padding: 20px; border-radius: 12px; border-left: 4px solid var(--accent);">
-                        <h3 style="color: var(--accent);">👍 장점</h3>
-                        <p style="margin-bottom: 12px;">${clean(data.positiveSummary || '내용 없음')}</p>
-                        <ul class="result-list" style="padding-left: 20px;">${prosHtml}</ul>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                    <section class="result-section" style="background:var(--bg-card); padding:20px; border-radius:12px; border-left:4px solid var(--accent);">
+                        <h3 style="color:var(--accent);">👍 장점</h3>
+                        <p style="margin-bottom:12px;">${clean(data.positiveSummary || '내용 없음')}</p>
+                        <ul class="result-list" style="padding-left:20px;">${prosHtml}</ul>
                     </section>
 
-                    <section class="result-section" style="background: var(--bg-card); padding: 20px; border-radius: 12px; border-left: 4px solid var(--accent-red);">
-                        <h3 style="color: var(--accent-red);">👎 단점</h3>
-                        <p style="margin-bottom: 12px;">${clean(data.negativeSummary || '내용 없음')}</p>
-                        <ul class="result-list" style="padding-left: 20px;">${consHtml}</ul>
+                    <section class="result-section" style="background:var(--bg-card); padding:20px; border-radius:12px; border-left:4px solid var(--accent-red);">
+                        <h3 style="color:var(--accent-red);">👎 단점</h3>
+                        <p style="margin-bottom:12px;">${clean(data.negativeSummary || '내용 없음')}</p>
+                        <ul class="result-list" style="padding-left:20px;">${consHtml}</ul>
                     </section>
                 </div>
 
-                <section class="result-section" style="background: var(--bg-card); padding: 20px; border-radius: 12px; border-top: 4px solid #FFD700;">
-                    <h3 style="color: #FFD700;">함께 언급된 모델</h3>
-                    <ul class="result-list" style="line-height: 1.8;">
+                <section class="result-section" style="background:var(--bg-card); padding:20px; border-radius:12px; border-top:4px solid #FFD700;">
+                    <h3 style="color:#FFD700;">함께 언급된 모델</h3>
+                    <ul class="result-list" style="line-height:1.8;">
                         ${modelsHtml}
                     </ul>
+                </section>
+
+                <!-- 예시 UI -->
+                <section class="result-section" style="background:var(--bg-card); padding:20px; border-radius:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <h3 style="margin:0;">📊 주요 이슈 비율</h3>
+                        <span style="font-size:12px; opacity:0.7; padding:4px 8px; border:1px solid rgba(255,255,255,0.15); border-radius:999px;">예시 UI</span>
+                    </div>
+                    ${mockIssueHtml}
+                </section>
+
+                <section class="result-section" style="background:var(--bg-card); padding:20px; border-radius:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <h3 style="margin:0;">🔗 장단점 근거 링크</h3>
+                        <span style="font-size:12px; opacity:0.7; padding:4px 8px; border:1px solid rgba(255,255,255,0.15); border-radius:999px;">예시 UI</span>
+                    </div>
+                    ${mockReferenceHtml}
+                </section>
+
+                <section class="result-section" style="background:var(--bg-card); padding:20px; border-radius:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <h3 style="margin:0;">📈 다른 제품 언급량 그래프</h3>
+                        <span style="font-size:12px; opacity:0.7; padding:4px 8px; border:1px solid rgba(255,255,255,0.15); border-radius:999px;">예시 UI</span>
+                    </div>
+                    ${mockModelChartHtml}
+                </section>
+
+                <section class="result-section" style="background:var(--bg-card); padding:20px; border-radius:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <h3 style="margin:0;">⏱ 시간에 따른 평가 변화</h3>
+                        <span style="font-size:12px; opacity:0.7; padding:4px 8px; border:1px solid rgba(255,255,255,0.15); border-radius:999px;">예시 UI</span>
+                    </div>
+                    ${mockTimelineHtml}
                 </section>
             </div>
         `;
     }
-
     const rankingData = {
         mouse: [
             { rank: 1, name: "로지텍 G PRO X SUPERLIGHT 2"},
