@@ -7,7 +7,7 @@ public class CrawlJob {
     private String[] sites;
  
     public enum Status {
-        PENDING, RUNNING, DONE,FAILED
+        PENDING, RUNNING, DONE,FAILED , SKIPPED
     }
 
     private Status status = Status.RUNNING; 

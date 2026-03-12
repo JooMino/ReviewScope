@@ -38,27 +38,54 @@ public class CrawlApiController {
         );
     }
     @PostMapping("/done")
-    public ResponseEntity<String> completeCrawl(@RequestBody CrawlResultRequest request) {
-        CrawlJob job = crawlQueue.get(request.getKeyword());
-        
-        if (job != null) {
-            String keyword = request.getKeyword();
-            
-            // ★★★ 정상 처리 ★★★
-            if ("FAIL".equalsIgnoreCase(request.getStatus())) {
-                job.setStatus(CrawlJob.Status.FAILED);
-                saveToDb(keyword, null, CrawlJob.Status.FAILED);
-                System.out.println("❌ 실패 처리: " + keyword);
-                return ResponseEntity.ok("Marked as FAILED");
-            }
+    @ResponseBody
+    public String done(@RequestBody CrawlResultRequest request) {
+        String keyword = request.getKeyword();
+        String incomingStatus = request.getStatus();
+        String incomingContent = request.getReportContent();
 
-            job.setStatus(CrawlJob.Status.DONE);
-            saveToDb(keyword, request.getReportContent(), CrawlJob.Status.DONE);
-            System.out.println(" 신규 데이터 저장: " + keyword);
-            return ResponseEntity.ok("Done & Saved to DB");
+        CrawlJob job = crawlQueue.get(keyword);
+        if (job != null) {
+            if ("FAIL".equalsIgnoreCase(incomingStatus)) {
+                job.setStatus(CrawlJob.Status.FAILED);
+            } else {
+                job.setStatus(CrawlJob.Status.DONE);
+            }
         }
-        
-        return ResponseEntity.status(404).body("Job not found");
+
+        CrawlReport report = crawlReportRepository.findByKeyword(keyword)
+            .orElseGet(() -> {
+                CrawlReport newReport = new CrawlReport();
+                newReport.setKeyword(keyword);
+                return newReport;
+            });
+
+        if ("SUCCESS".equalsIgnoreCase(incomingStatus)) {
+            if (incomingContent != null && !incomingContent.trim().isEmpty()) {
+                report.setReportContent(incomingContent);
+            } else {
+                System.out.println("SUCCESS인데 reportContent가 비어 있음 -> 기존 내용 유지");
+            }
+            report.setStatus(CrawlJob.Status.DONE);
+        }
+        else if ("SKIPPED".equalsIgnoreCase(incomingStatus)) {
+            System.out.println("SKIPPED 수신 -> 기존 reportContent 유지");
+            report.setStatus(CrawlJob.Status.SKIPPED);
+        }
+        else if ("FAIL".equalsIgnoreCase(incomingStatus)) {
+            System.out.println("FAIL 수신 -> reportContent 유지, 상태만 실패로 저장");
+            report.setStatus(CrawlJob.Status.FAILED);
+        }
+        else {
+            System.out.println("알 수 없는 상태 수신: " + incomingStatus);
+            report.setStatus(CrawlJob.Status.FAILED);
+        }
+
+        report.setCreatedAt(LocalDateTime.now());
+
+        crawlReportRepository.save(report);
+
+        return "Done & Saved to DB";
     }
 
     // DB 저장 메서드 (upsert)
