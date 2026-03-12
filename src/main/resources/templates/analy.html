@@ -148,54 +148,55 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-	function renderResult(data) {
+    function renderResult(data) {
+        const clean = (text) => {
+            if (!text || typeof text !== 'string') return text;
+            return text.replace(/[#*]/g, '').trim();
+        };
 
-	    // 1. 기호를 지우는 간단한 함수
-	    const clean = (text) => {
-	        if (!text || typeof text !== 'string') return text;
-	        return text.replace(/[#*]/g, '').trim();
-	    };
+        const prosHtml = (data.pros && data.pros.length > 0)
+            ? data.pros.map(p => `<li>${clean(p)}</li>`).join('')
+            : "<li>데이터 없음</li>";
 
-	    // 3. 리스트 데이터 처리
-	    const prosHtml = (data.pros && data.pros.length > 0) 
-	        ? (Array.isArray(data.pros) ? data.pros : data.pros.split('\n')) // 배열이든 문자열이든 대응
-	            .map(p => `<li>${clean(p)}</li>`) // 여기서 clean 적용
-	            .join('') 
-	        : "<li>데이터 없음</li>";
-	
-	    const consHtml = (data.cons && data.cons.length > 0) 
-	        ? (Array.isArray(data.cons) ? data.cons : data.cons.split('\n'))
-	            .map(c => `<li>${clean(c)}</li>`)
-	            .join('') 
-	        : "<li>데이터 없음</li>";
-	    const modelsHtml = (data.models && data.models.length > 0)
-	        ? (Array.isArray(data.models) ? data.models : data.models.split('\n'))
-	            .map(m => `<li>${clean(m)}</li>`).join('')
-	        : "<li>언급된 모델 없음</li>";
-	        
-	    resultContent.innerHTML = `
-	        <div class="report-container" style="display: flex; flex-direction: column; gap: 20px;"> 
-	            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-	                <section class="result-section" style="background: var(--bg-card); padding: 20px; border-radius: 12px; border-left: 4px solid var(--accent);">
-	                    <h3 style="color: var(--accent);">👍 긍정적 평가</h3>
-	                    <ul class="result-list" style="padding-left: 20px;">${prosHtml}</ul>
-	                </section>
-	                
-	                <section class="result-section" style="background: var(--bg-card); padding: 20px; border-radius: 12px; border-left: 4px solid var(--accent-red);">
-	                    <h3 style="color: var(--accent-red);">👎 부정적 평가</h3>
-	                    <ul class="result-list" style="padding-left: 20px;">${consHtml}</ul>
-	                </section>
-	                
-	                <section class="result-section" style="background: var(--bg-card); padding: 20px; border-radius: 12px; border-top: 4px solid #FFD700;">
-	                <h3 style="color: #FFD700;">함께 언급된 모델</h3>
-	                <ul class="result-list" style="line-height: 1.8;" >
-	                    ${modelsHtml}
-	                </ul>
-	            </section>
-	            </div>
-	        </div>
-	    `;
-	}
+        const consHtml = (data.cons && data.cons.length > 0)
+            ? data.cons.map(c => `<li>${clean(c)}</li>`).join('')
+            : "<li>데이터 없음</li>";
+
+        const modelsHtml = (data.models && data.models.length > 0)
+            ? data.models.map(m => `<li>${clean(m)}</li>`).join('')
+            : "<li>언급된 모델 없음</li>";
+
+        resultContent.innerHTML = `
+            <div class="report-container" style="display: flex; flex-direction: column; gap: 20px;">
+
+                <section class="result-section" style="background: var(--bg-card); padding: 20px; border-radius: 12px;">
+                    <h3 style="margin-bottom: 8px;">📌 분석 키워드</h3>
+                    <p style="margin: 0;">${clean(data.summary || '내용 없음')}</p>
+                </section>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <section class="result-section" style="background: var(--bg-card); padding: 20px; border-radius: 12px; border-left: 4px solid var(--accent);">
+                        <h3 style="color: var(--accent);">👍 장점</h3>
+                        <p style="margin-bottom: 12px;">${clean(data.positiveSummary || '')}</p>
+                        <ul class="result-list" style="padding-left: 20px;">${prosHtml}</ul>
+                    </section>
+
+                    <section class="result-section" style="background: var(--bg-card); padding: 20px; border-radius: 12px; border-left: 4px solid var(--accent-red);">
+                        <h3 style="color: var(--accent-red);">👎 단점</h3>
+                        <p style="margin-bottom: 12px;">${clean(data.negativeSummary || '')}</p>
+                        <ul class="result-list" style="padding-left: 20px;">${consHtml}</ul>
+                    </section>
+                </div>
+
+                <section class="result-section" style="background: var(--bg-card); padding: 20px; border-radius: 12px; border-top: 4px solid #FFD700;">
+                    <h3 style="color: #FFD700;">함께 언급된 모델</h3>
+                    <ul class="result-list" style="line-height: 1.8;">
+                        ${modelsHtml}
+                    </ul>
+                </section>
+            </div>
+        `;
+    }
 
     // --- TOP5 관련 기존 로직 ---
     const rankingData = {
