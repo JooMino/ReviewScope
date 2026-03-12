@@ -238,28 +238,35 @@
 /* =========================
    DASHBOARD
 ========================= */
-
+.section-card{
+    margin-bottom:20px;
+}
 .dashboard-section {
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
-.dashboard-grid {
-    display: grid;
-    gap: 20px;
+.dashboard-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
 }
 
-.top-grid {
-    grid-template-columns: 1.1fr 0.9fr;
+.top-grid{
+    grid-template-columns:1fr 1fr;
+    align-items:start;
 }
-
 .sentiment-grid {
     grid-template-columns: 1fr 1fr;
 }
 
 .chart-grid {
     grid-template-columns: 1fr 1fr;
+}
+.dashboard-card{
+    padding:20px;
+    border-radius:18px;
 }
 
 .dashboard-card-header {
