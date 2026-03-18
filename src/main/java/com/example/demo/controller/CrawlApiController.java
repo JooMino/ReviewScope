@@ -27,9 +27,9 @@ public class CrawlApiController {
     }
     @GetMapping("/exists")
     public Map<String, Object> reportExists(@RequestParam("keyword") String keyword) {
-        boolean exists = crawlReportRepository.findRecentByKeyword(
+        boolean exists = crawlReportRepository.findValidRecentReport(
                 keyword,
-                java.time.LocalDateTime.now().minusDays(7)
+                LocalDateTime.now().minusDays(7)
         ).isPresent();
 
         return Map.of(
@@ -48,67 +48,36 @@ public class CrawlApiController {
         if (job != null) {
             if ("FAIL".equalsIgnoreCase(incomingStatus)) {
                 job.setStatus(CrawlJob.Status.FAILED);
+            } else if ("SKIPPED".equalsIgnoreCase(incomingStatus)) {
+                job.setStatus(CrawlJob.Status.SKIPPED);
             } else {
                 job.setStatus(CrawlJob.Status.DONE);
             }
         }
 
-        CrawlReport report = crawlReportRepository.findByKeyword(keyword)
-            .orElseGet(() -> {
-                CrawlReport newReport = new CrawlReport();
-                newReport.setKeyword(keyword);
-                return newReport;
-            });
-
+        // SUCCESS일 때만 report 저장
         if ("SUCCESS".equalsIgnoreCase(incomingStatus)) {
-            if (incomingContent != null && !incomingContent.trim().isEmpty()) {
-                report.setReportContent(incomingContent);
-            } else {
-                System.out.println("SUCCESS인데 reportContent가 비어 있음 -> 기존 내용 유지");
+            if (incomingContent == null || incomingContent.trim().isEmpty()) {
+                return "SUCCESS but empty reportContent - not saved";
             }
+
+            CrawlReport report = crawlReportRepository.findByKeyword(keyword)
+                .orElseGet(() -> {
+                    CrawlReport newReport = new CrawlReport();
+                    newReport.setKeyword(keyword);
+                    return newReport;
+                });
+
+            report.setReportContent(incomingContent);
             report.setStatus(CrawlJob.Status.DONE);
-        }
-        else if ("SKIPPED".equalsIgnoreCase(incomingStatus)) {
-            System.out.println("SKIPPED 수신 -> 기존 reportContent 유지");
-            report.setStatus(CrawlJob.Status.SKIPPED);
-        }
-        else if ("FAIL".equalsIgnoreCase(incomingStatus)) {
-            System.out.println("FAIL 수신 -> reportContent 유지, 상태만 실패로 저장");
-            report.setStatus(CrawlJob.Status.FAILED);
-        }
-        else {
-            System.out.println("알 수 없는 상태 수신: " + incomingStatus);
-            report.setStatus(CrawlJob.Status.FAILED);
+            report.setCreatedAt(LocalDateTime.now());
+
+            crawlReportRepository.save(report);
+            return "SUCCESS report saved";
         }
 
-        report.setCreatedAt(LocalDateTime.now());
-
-        crawlReportRepository.save(report);
-
-        return "Done & Saved to DB";
-    }
-
-    // DB 저장 메서드 (upsert)
-    private void saveToDb(String keyword, String content, CrawlJob.Status status) {
-        try {
-            crawlReportRepository.findByKeyword(keyword)
-                .ifPresentOrElse(
-                    existing -> {
-                        existing.setReportContent(content);
-                        existing.setStatus(status);
-                        existing.setCreatedAt(LocalDateTime.now());
-                        crawlReportRepository.save(existing);
-                        System.out.println("기존 데이터 업데이트: " + keyword);
-                    },
-                    () -> {
-                        CrawlReport report = new CrawlReport(keyword, content, status);
-                        crawlReportRepository.save(report);
-                        System.out.println(" 신규 데이터 생성: " + keyword);
-                    }
-                );
-        } catch (Exception e) {
-            System.err.println("❌ DB 저장 실패 [" + keyword + "]: " + e.getMessage());
-        }
+        // FAIL / SKIPPED는 report 테이블에 저장하지 않음
+        return "Status updated only: " + incomingStatus;
     }
     
     @GetMapping("/status")

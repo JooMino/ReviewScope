@@ -62,13 +62,6 @@ public class SearchController {
     @GetMapping("/api/result-data")
     @ResponseBody
     public Map<String, Object> getResultData(@RequestParam("keyword") String keyword) {
-        CrawlJob job = crawlQueue.get(keyword);
-        if (job == null || job.getStatus() != CrawlJob.Status.DONE) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "NOT_READY");
-            return error;
-        }
-
         Optional<CrawlReport> optionalReport = crawlReportRepository.findByKeyword(keyword);
         if (optionalReport.isEmpty()) {
             Map<String, Object> error = new HashMap<>();
@@ -77,8 +70,14 @@ public class SearchController {
         }
 
         CrawlReport report = optionalReport.get();
-        String reportContent = report.getReportContent();
 
+        if (report.getStatus() != CrawlJob.Status.DONE) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "NOT_READY");
+            return error;
+        }
+
+        String reportContent = report.getReportContent();
         if (reportContent == null || reportContent.trim().isEmpty()) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "EMPTY_REPORT");
@@ -88,7 +87,7 @@ public class SearchController {
         try {
             JsonNode root = objectMapper.readTree(reportContent);
 
-            String summary = root.path("keyword").asText();
+            String summary = root.path("summary").asText();
             if (summary == null || summary.trim().isEmpty()) {
                 summary = keyword;
             }

@@ -14,4 +14,16 @@ public interface CrawlReportRepository extends JpaRepository<CrawlReport, String
     @Query("SELECT r FROM CrawlReport r WHERE r.keyword = :keyword AND r.createdAt > :sevenDaysAgo")
     Optional<CrawlReport> findRecentByKeyword(@Param("keyword") String keyword, 
                                             @Param("sevenDaysAgo") LocalDateTime sevenDaysAgo);
+    @Query("""
+    	    SELECT r FROM CrawlReport r
+    	    WHERE r.keyword = :keyword
+    	      AND r.createdAt > :sevenDaysAgo
+    	      AND r.status = com.example.demo.crawl.CrawlJob$Status.DONE
+    	      AND r.reportContent IS NOT NULL
+    	      AND LENGTH(TRIM(r.reportContent)) > 0
+    	""")
+    	Optional<CrawlReport> findValidRecentReport(
+    	        @Param("keyword") String keyword,
+    	        @Param("sevenDaysAgo") LocalDateTime sevenDaysAgo
+    	);
 }
