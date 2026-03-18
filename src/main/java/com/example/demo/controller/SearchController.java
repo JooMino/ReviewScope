@@ -120,7 +120,7 @@ public class SearchController {
 
             List<String> models = new ArrayList<>();
             for (JsonNode node : root.path("other_products")) {
-                String name = node.path("product_name").asText();
+                String name = node.path("official_name").asText();
                 String context = node.path("context").asText();
 
                 boolean hasName = name != null && !name.trim().isEmpty();
