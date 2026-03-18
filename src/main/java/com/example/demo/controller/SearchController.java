@@ -62,6 +62,18 @@ public class SearchController {
     @GetMapping("/api/result-data")
     @ResponseBody
     public Map<String, Object> getResultData(@RequestParam("keyword") String keyword) {
+        CrawlJob job = crawlQueue.get(keyword);
+
+        // RUNNING / PENDING / FAILED 일 때만 NOT_READY
+        if (job != null &&
+            job.getStatus() != CrawlJob.Status.DONE &&
+            job.getStatus() != CrawlJob.Status.SKIPPED) {
+
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "NOT_READY");
+            return error;
+        }
+
         Optional<CrawlReport> optionalReport = crawlReportRepository.findByKeyword(keyword);
         if (optionalReport.isEmpty()) {
             Map<String, Object> error = new HashMap<>();
@@ -70,14 +82,8 @@ public class SearchController {
         }
 
         CrawlReport report = optionalReport.get();
-
-        if (report.getStatus() != CrawlJob.Status.DONE) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "NOT_READY");
-            return error;
-        }
-
         String reportContent = report.getReportContent();
+
         if (reportContent == null || reportContent.trim().isEmpty()) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "EMPTY_REPORT");
@@ -87,7 +93,11 @@ public class SearchController {
         try {
             JsonNode root = objectMapper.readTree(reportContent);
 
+            // summary 필드 우선, 없으면 keyword fallback
             String summary = root.path("summary").asText();
+            if (summary == null || summary.trim().isEmpty()) {
+                summary = root.path("keyword").asText();
+            }
             if (summary == null || summary.trim().isEmpty()) {
                 summary = keyword;
             }
@@ -121,6 +131,11 @@ public class SearchController {
             List<String> models = new ArrayList<>();
             for (JsonNode node : root.path("other_products")) {
                 String name = node.path("official_name").asText();
+
+                if (name == null || name.trim().isEmpty()) {
+                    name = node.path("product_name").asText();
+                }
+
                 String context = node.path("context").asText();
 
                 boolean hasName = name != null && !name.trim().isEmpty();

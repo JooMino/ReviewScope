@@ -344,10 +344,10 @@ document.addEventListener('DOMContentLoaded', function () {
             fetch(`/api/crawl/status?keyword=${encodeURIComponent(keyword)}`)
                 .then(res => res.json())
                 .then(data => {
-                    if (data.status === 'DONE') {
-                        clearInterval(interval);
-                        fetchFinalResult(keyword);
-                    } else if (data.status === 'FAILED') {
+                	if (data.status === 'DONE' || data.status === 'SKIPPED') {
+                	    clearInterval(interval);
+                	    fetchFinalResult(keyword);
+                	} else if (data.status === 'FAILED') {
                         clearInterval(interval);
                         heroStatus.textContent = '실패';
                         heroStatusText.textContent = '분석 작업이 실패했습니다.';
