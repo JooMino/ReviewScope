@@ -39,7 +39,7 @@ public class CrawlApiController {
     public Map<String, Object> reportExists(@RequestParam("keyword") String keyword) {
         boolean exists = crawlReportRepository.findValidRecentReport(
                 keyword,
-                LocalDateTime.now().minusDays(7)
+                LocalDateTime.now().minusDays(30)
         ).isPresent();
 
         return Map.of(
