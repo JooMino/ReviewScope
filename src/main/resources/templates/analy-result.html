@@ -204,16 +204,12 @@
                     <h2>🔗 장단점 근거 링크</h2>
                     <span class="card-badge">예시 UI</span>
                 </div>
-                <div class="reference-list">
-                    <div class="reference-item">
-                        <strong>착용감이 타이트하다는 의견</strong>
-                        <p>디시 / 클리앙 / 퀘이사존 링크 영역</p>
-                    </div>
-                    <div class="reference-item">
-                        <strong>배터리 지속시간이 짧다는 의견</strong>
-                        <p>펨코 / 디시 링크 영역</p>
-                    </div>
-                </div>
+				<div class="reference-list" id="referenceList">
+				    <div class="reference-item">
+				        <strong>불러오는 중...</strong>
+				        <p>근거 링크를 준비하고 있습니다.</p>
+				    </div>
+				</div>
             </section>
 
             <section class="section-card dashboard-card">
@@ -246,6 +242,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const prosList = document.getElementById('prosList');
     const consList = document.getElementById('consList');
     const modelsList = document.getElementById('modelsList');
+    const referenceList = document.getElementById('referenceList');
 
     const heroKeyword = document.getElementById('heroKeyword');
     const pageTitle = document.getElementById('pageTitle');
@@ -270,7 +267,7 @@ document.addEventListener('DOMContentLoaded', function () {
     heroKeyword.textContent = keyword;
     currentKeyword.textContent = keyword;
     loadingKeyword.textContent = keyword;
-    pageTitle.innerHTML = `${keyword} 커뮤니티 분석 결과`;
+    pageTitle.innerHTML = `${escapeHtml(keyword)} 커뮤니티 분석 결과`;
 
     resultSearchForm.addEventListener('submit', function (e) {
         e.preventDefault();
@@ -281,16 +278,111 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function clean(text) {
         if (text == null) return '';
-        if (typeof text !== 'string') return text;
+        if (typeof text !== 'string') return String(text);
         return text.replace(/[#*]/g, '').trim();
+    }
+
+    function escapeHtml(text) {
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 
     function renderList(target, items, emptyText) {
         if (!Array.isArray(items) || items.length === 0) {
-            target.innerHTML = `<li>${emptyText}</li>`;
+            target.innerHTML = `<li>${escapeHtml(emptyText)}</li>`;
             return;
         }
-        target.innerHTML = items.map(item => `<li>${clean(item)}</li>`).join('');
+
+        target.innerHTML = items.map(item => {
+            return `<li>${escapeHtml(clean(item))}</li>`;
+        }).join('');
+    }
+
+    function renderPointList(target, items, emptyText) {
+        if (!Array.isArray(items) || items.length === 0) {
+            target.innerHTML = `<li>${escapeHtml(emptyText)}</li>`;
+            return;
+        }
+
+        target.innerHTML = items.map(item => {
+            const point = clean(item && item.point ? item.point : '');
+            return `<li>${escapeHtml(point)}</li>`;
+        }).join('');
+    }
+
+    function renderReferences(target, pros, cons) {
+        const merged = [
+            ...(Array.isArray(pros) ? pros.map(item => ({ ...item, type: '장점' })) : []),
+            ...(Array.isArray(cons) ? cons.map(item => ({ ...item, type: '단점' })) : [])
+        ];
+
+        const filtered = merged.filter(item =>
+            item &&
+            item.point &&
+            Array.isArray(item.sources) &&
+            item.sources.length > 0
+        );
+
+        if (filtered.length === 0) {
+            target.innerHTML = `
+                <div class="reference-item">
+                    <strong>근거 링크 없음</strong>
+                    <p>표시할 출처 링크가 없습니다.</p>
+                </div>
+            `;
+            return;
+        }
+
+        target.innerHTML = filtered.map(item => {
+            const point = escapeHtml(clean(item.point || ''));
+            const type = escapeHtml(item.type || '');
+
+            const links = item.sources
+                .filter(source => source && source.url)
+                .map(source => {
+                    const url = source.url;
+                    const safeUrl = escapeHtml(url);
+                    return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeUrl}</a>`;
+                })
+                .join('<br>');
+
+            return `
+                <div class="reference-item">
+                    <strong>[${type}] ${point}</strong>
+                    <p>${links || '링크 없음'}</p>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function setErrorState(title, desc, summaryMessage) {
+        heroStatus.textContent = title;
+        heroStatusText.textContent = desc;
+        jobStatus.textContent = title;
+
+        loadingSection.style.display = 'none';
+        dashboardSection.style.display = 'block';
+
+        summaryText.textContent = summaryMessage;
+        positiveSummary.textContent = '내용 없음';
+        negativeSummary.textContent = '내용 없음';
+
+        prosList.innerHTML = '<li>데이터 없음</li>';
+        consList.innerHTML = '<li>데이터 없음</li>';
+        modelsList.innerHTML = '<li>데이터 없음</li>';
+
+        if (referenceList) {
+            referenceList.innerHTML = `
+                <div class="reference-item">
+                    <strong>근거 링크 없음</strong>
+                    <p>표시할 출처 링크가 없습니다.</p>
+                </div>
+            `;
+        }
     }
 
     function fetchFinalResult(keyword) {
@@ -298,13 +390,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(res => res.json())
             .then(data => {
                 if (data.error) {
-                    heroStatus.textContent = '결과 없음';
-                    heroStatusText.textContent = data.error;
-                    jobStatus.textContent = '실패';
-
-                    loadingSection.style.display = 'none';
-                    dashboardSection.style.display = 'block';
-                    summaryText.textContent = `결과를 불러오지 못했습니다. (${data.error})`;
+                    setErrorState('결과 없음', data.error, `결과를 불러오지 못했습니다. (${data.error})`);
                     return;
                 }
 
@@ -316,22 +402,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 positiveSummary.textContent = clean(data.positiveSummary || '내용 없음');
                 negativeSummary.textContent = clean(data.negativeSummary || '내용 없음');
 
-                renderList(prosList, data.pros, '장점 데이터 없음');
-                renderList(consList, data.cons, '단점 데이터 없음');
+                renderPointList(prosList, data.pros, '장점 데이터 없음');
+                renderPointList(consList, data.cons, '단점 데이터 없음');
                 renderList(modelsList, data.models, '언급된 모델 없음');
+
+                if (referenceList) {
+                    renderReferences(referenceList, data.pros, data.cons);
+                }
 
                 loadingSection.style.display = 'none';
                 dashboardSection.style.display = 'block';
             })
             .catch(err => {
                 console.error(err);
-                heroStatus.textContent = '오류';
-                heroStatusText.textContent = '결과 조회 중 오류가 발생했습니다.';
-                jobStatus.textContent = '오류';
-
-                loadingSection.style.display = 'none';
-                dashboardSection.style.display = 'block';
-                summaryText.textContent = '결과를 불러오지 못했습니다.';
+                setErrorState('오류', '결과 조회 중 오류가 발생했습니다.', '결과를 불러오지 못했습니다.');
             });
     }
 
@@ -344,18 +428,12 @@ document.addEventListener('DOMContentLoaded', function () {
             fetch(`/api/crawl/status?keyword=${encodeURIComponent(keyword)}`)
                 .then(res => res.json())
                 .then(data => {
-                	if (data.status === 'DONE' || data.status === 'SKIPPED') {
-                	    clearInterval(interval);
-                	    fetchFinalResult(keyword);
-                	} else if (data.status === 'FAILED') {
+                    if (data.status === 'DONE' || data.status === 'SKIPPED') {
                         clearInterval(interval);
-                        heroStatus.textContent = '실패';
-                        heroStatusText.textContent = '분석 작업이 실패했습니다.';
-                        jobStatus.textContent = '실패';
-
-                        loadingSection.style.display = 'none';
-                        dashboardSection.style.display = 'block';
-                        summaryText.textContent = '분석에 실패했습니다.';
+                        fetchFinalResult(keyword);
+                    } else if (data.status === 'FAILED') {
+                        clearInterval(interval);
+                        setErrorState('실패', '분석 작업이 실패했습니다.', '분석에 실패했습니다.');
                     } else {
                         heroStatus.textContent = '분석 중';
                         heroStatusText.textContent = '커뮤니티 데이터를 수집 중입니다.';
@@ -365,14 +443,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 .catch(err => {
                     clearInterval(interval);
                     console.error(err);
-
-                    heroStatus.textContent = '오류';
-                    heroStatusText.textContent = '상태 확인 중 오류가 발생했습니다.';
-                    jobStatus.textContent = '오류';
-
-                    loadingSection.style.display = 'none';
-                    dashboardSection.style.display = 'block';
-                    summaryText.textContent = '상태 확인 중 오류가 발생했습니다.';
+                    setErrorState('오류', '상태 확인 중 오류가 발생했습니다.', '상태 확인 중 오류가 발생했습니다.');
                 });
         }, 2000);
     }

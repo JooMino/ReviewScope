@@ -4,6 +4,8 @@ import com.example.demo.crawl.CrawlJob;
 import com.example.demo.crawl.CrawlQueue;
 import com.example.demo.crawl.CrawlReport;
 import com.example.demo.crawl.CrawlReportRepository;
+import com.example.demo.crawl.SourceMap;
+import com.example.demo.crawl.SourceMapRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Controller;
@@ -14,21 +16,31 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
 public class SearchController {
 
     private final CrawlQueue crawlQueue;
     private final CrawlReportRepository crawlReportRepository;
+    private final SourceMapRepository sourceMapRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public SearchController(CrawlQueue crawlQueue, CrawlReportRepository crawlReportRepository) {
+    public SearchController(
+            CrawlQueue crawlQueue,
+            CrawlReportRepository crawlReportRepository,
+            SourceMapRepository sourceMapRepository
+    ) {
         this.crawlQueue = crawlQueue;
         this.crawlReportRepository = crawlReportRepository;
+        this.sourceMapRepository = sourceMapRepository;
     }
 
     @GetMapping("/")
@@ -40,11 +52,13 @@ public class SearchController {
     public String analyzePage() {
         return "analy";
     }
+
     @GetMapping("/analyze/result")
     public String analyzeResultPage(@RequestParam("keyword") String keyword, Model model) {
         model.addAttribute("keyword", keyword);
         return "analy-result";
     }
+
     @PostMapping("/search")
     @ResponseBody
     public Map<String, String> search(@RequestParam("keyword") String keyword) {
@@ -93,7 +107,6 @@ public class SearchController {
         try {
             JsonNode root = objectMapper.readTree(reportContent);
 
-            // summary 필드 우선, 없으면 keyword fallback
             String summary = root.path("summary").asText();
             if (summary == null || summary.trim().isEmpty()) {
                 summary = root.path("keyword").asText();
@@ -112,21 +125,15 @@ public class SearchController {
                 negativeSummary = "내용 없음";
             }
 
-            List<String> pros = new ArrayList<>();
-            for (JsonNode node : root.path("positive").path("key_points")) {
-                String point = node.path("point").asText();
-                if (point != null && !point.trim().isEmpty()) {
-                    pros.add(point);
-                }
-            }
+            List<Map<String, Object>> pros = buildKeyPointsWithSources(
+                    keyword,
+                    root.path("positive").path("key_points")
+            );
 
-            List<String> cons = new ArrayList<>();
-            for (JsonNode node : root.path("negative").path("key_points")) {
-                String point = node.path("point").asText();
-                if (point != null && !point.trim().isEmpty()) {
-                    cons.add(point);
-                }
-            }
+            List<Map<String, Object>> cons = buildKeyPointsWithSources(
+                    keyword,
+                    root.path("negative").path("key_points")
+            );
 
             List<String> models = new ArrayList<>();
             for (JsonNode node : root.path("other_products")) {
@@ -164,5 +171,83 @@ public class SearchController {
             error.put("error", "JSON_PARSE_FAILED");
             return error;
         }
+    }
+
+    private List<Map<String, Object>> buildKeyPointsWithSources(String keyword, JsonNode keyPointsNode) {
+        List<Map<String, Object>> results = new ArrayList<>();
+
+        for (JsonNode node : keyPointsNode) {
+            String point = node.path("point").asText();
+            String dates = node.path("dates").asText();
+            String filesRaw = node.path("files").asText();
+
+            List<String> fileNames = parseFileNames(filesRaw);
+            List<String> hashes = fileNames.stream()
+                    .map(this::extractHashFromFileName)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .toList();
+
+            Map<String, String> hashToUrl = sourceMapRepository
+                    .findByKeywordAndHashValueIn(keyword, hashes)
+                    .stream()
+                    .collect(Collectors.toMap(
+                            SourceMap::getHashValue,
+                            SourceMap::getUrl,
+                            (a, b) -> a,
+                            LinkedHashMap::new
+                    ));
+
+            List<Map<String, String>> sources = new ArrayList<>();
+            for (String fileName : fileNames) {
+                String hash = extractHashFromFileName(fileName);
+                if (hash == null) continue;
+
+                String url = hashToUrl.get(hash);
+                if (url == null || url.isBlank()) continue;
+
+                Map<String, String> source = new LinkedHashMap<>();
+                source.put("file", fileName);
+                source.put("hash", hash);
+                source.put("url", url);
+                sources.add(source);
+            }
+
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("point", point);
+            item.put("dates", dates);
+            item.put("files", fileNames);
+            item.put("sources", sources);
+
+            results.add(item);
+        }
+
+        return results;
+    }
+
+    private List<String> parseFileNames(String filesRaw) {
+        if (filesRaw == null || filesRaw.isBlank()) {
+            return List.of();
+        }
+
+        return Arrays.stream(filesRaw.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .toList();
+    }
+
+    private String extractHashFromFileName(String fileName) {
+        if (fileName == null || fileName.isBlank()) {
+            return null;
+        }
+
+        int underscoreIndex = fileName.lastIndexOf('_');
+        int dotIndex = fileName.lastIndexOf('.');
+
+        if (underscoreIndex < 0 || dotIndex < 0 || underscoreIndex >= dotIndex) {
+            return null;
+        }
+
+        return fileName.substring(underscoreIndex + 1, dotIndex).trim();
     }
 }
