@@ -18,11 +18,13 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Controller
@@ -76,55 +78,45 @@ public class SearchController {
     @GetMapping("/api/result-data")
     @ResponseBody
     public Map<String, Object> getResultData(@RequestParam("keyword") String keyword) {
+
         CrawlJob job = crawlQueue.get(keyword);
 
-        // RUNNING / PENDING / FAILED 일 때만 NOT_READY
         if (job != null &&
-            job.getStatus() != CrawlJob.Status.DONE &&
-            job.getStatus() != CrawlJob.Status.SKIPPED) {
+                job.getStatus() != CrawlJob.Status.DONE &&
+                job.getStatus() != CrawlJob.Status.SKIPPED) {
 
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "NOT_READY");
-            return error;
+            return Map.of("error", "NOT_READY");
         }
 
         Optional<CrawlReport> optionalReport = crawlReportRepository.findByKeyword(keyword);
         if (optionalReport.isEmpty()) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "NO_REPORT");
-            return error;
+            return Map.of("error", "NO_REPORT");
         }
 
         CrawlReport report = optionalReport.get();
         String reportContent = report.getReportContent();
 
         if (reportContent == null || reportContent.trim().isEmpty()) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "EMPTY_REPORT");
-            return error;
+            return Map.of("error", "EMPTY_REPORT");
         }
 
         try {
             JsonNode root = objectMapper.readTree(reportContent);
 
+            // ---------------------------
+            // 요약
+            // ---------------------------
             String summary = root.path("summary").asText();
-            if (summary == null || summary.trim().isEmpty()) {
-                summary = root.path("keyword").asText();
-            }
-            if (summary == null || summary.trim().isEmpty()) {
+            if (summary == null || summary.isBlank()) {
                 summary = keyword;
             }
 
-            String positiveSummary = root.path("positive").path("synthesis").asText();
-            if (positiveSummary == null || positiveSummary.trim().isEmpty()) {
-                positiveSummary = "내용 없음";
-            }
+            String positiveSummary = root.path("positive").path("synthesis").asText("내용 없음");
+            String negativeSummary = root.path("negative").path("synthesis").asText("내용 없음");
 
-            String negativeSummary = root.path("negative").path("synthesis").asText();
-            if (negativeSummary == null || negativeSummary.trim().isEmpty()) {
-                negativeSummary = "내용 없음";
-            }
-
+            // ---------------------------
+            // 장점 / 단점
+            // ---------------------------
             List<Map<String, Object>> pros = buildKeyPointsWithSources(
                     keyword,
                     root.path("positive").path("key_points")
@@ -135,27 +127,57 @@ public class SearchController {
                     root.path("negative").path("key_points")
             );
 
+            // ---------------------------
+            // 함께 언급된 모델
+            // ---------------------------
             List<String> models = new ArrayList<>();
             for (JsonNode node : root.path("other_products")) {
                 String name = node.path("official_name").asText();
-
-                if (name == null || name.trim().isEmpty()) {
+                if (name == null || name.isBlank()) {
                     name = node.path("product_name").asText();
                 }
 
                 String context = node.path("context").asText();
 
-                boolean hasName = name != null && !name.trim().isEmpty();
-                boolean hasContext = context != null && !context.trim().isEmpty();
-
-                if (hasName && hasContext) {
+                if (!name.isBlank() && !context.isBlank()) {
                     models.add(name + " - " + context);
-                } else if (hasName) {
+                } else if (!name.isBlank()) {
                     models.add(name);
                 }
             }
 
+            // ---------------------------
+            // 🔥 핵심: stats 계산 (files 기반)
+            // ---------------------------
+            Set<String> positiveFiles = new HashSet<>();
+            Set<String> negativeFiles = new HashSet<>();
 
+            for (JsonNode node : root.path("positive").path("key_points")) {
+                String files = node.path("files").asText("");
+                for (String f : files.split(",")) {
+                    if (!f.trim().isEmpty()) positiveFiles.add(f.trim());
+                }
+            }
+
+            for (JsonNode node : root.path("negative").path("key_points")) {
+                String files = node.path("files").asText("");
+                for (String f : files.split(",")) {
+                    if (!f.trim().isEmpty()) negativeFiles.add(f.trim());
+                }
+            }
+
+            int positiveCount = positiveFiles.size();
+            int negativeCount = negativeFiles.size();
+            int total = positiveCount + negativeCount;
+
+            Map<String, Object> stats = new HashMap<>();
+            stats.put("positiveCount", positiveCount);
+            stats.put("negativeCount", negativeCount);
+            stats.put("mentionCount", total);
+
+            // ---------------------------
+            // 결과 반환
+            // ---------------------------
             Map<String, Object> result = new HashMap<>();
             result.put("summary", summary);
             result.put("positiveSummary", positiveSummary);
@@ -163,18 +185,19 @@ public class SearchController {
             result.put("pros", pros);
             result.put("cons", cons);
             result.put("models", models);
-
+            result.put("stats", stats);
 
             return result;
 
         } catch (Exception e) {
             e.printStackTrace();
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "JSON_PARSE_FAILED");
-            return error;
+            return Map.of("error", "JSON_PARSE_FAILED");
         }
     }
 
+    // ---------------------------
+    // key_points + source 매핑
+    // ---------------------------
     private List<Map<String, Object>> buildKeyPointsWithSources(String keyword, JsonNode keyPointsNode) {
         List<Map<String, Object>> results = new ArrayList<>();
 
@@ -183,7 +206,11 @@ public class SearchController {
             String dates = node.path("dates").asText();
             String filesRaw = node.path("files").asText();
 
-            List<String> fileNames = parseFileNames(filesRaw);
+            List<String> fileNames = Arrays.stream(filesRaw.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isBlank())
+                    .toList();
+
             List<String> hashes = fileNames.stream()
                     .map(this::extractHashFromFileName)
                     .filter(Objects::nonNull)
@@ -201,17 +228,19 @@ public class SearchController {
                     ));
 
             List<Map<String, String>> sources = new ArrayList<>();
+
             for (String fileName : fileNames) {
                 String hash = extractHashFromFileName(fileName);
                 if (hash == null) continue;
 
                 String url = hashToUrl.get(hash);
-                if (url == null || url.isBlank()) continue;
+                if (url == null) continue;
 
                 Map<String, String> source = new LinkedHashMap<>();
                 source.put("file", fileName);
                 source.put("hash", hash);
                 source.put("url", url);
+
                 sources.add(source);
             }
 
@@ -227,29 +256,14 @@ public class SearchController {
         return results;
     }
 
-    private List<String> parseFileNames(String filesRaw) {
-        if (filesRaw == null || filesRaw.isBlank()) {
-            return List.of();
-        }
-
-        return Arrays.stream(filesRaw.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isBlank())
-                .toList();
-    }
-
     private String extractHashFromFileName(String fileName) {
-        if (fileName == null || fileName.isBlank()) {
-            return null;
-        }
+        if (fileName == null || fileName.isBlank()) return null;
 
-        int underscoreIndex = fileName.lastIndexOf('_');
-        int dotIndex = fileName.lastIndexOf('.');
+        int underscore = fileName.lastIndexOf('_');
+        int dot = fileName.lastIndexOf('.');
 
-        if (underscoreIndex < 0 || dotIndex < 0 || underscoreIndex >= dotIndex) {
-            return null;
-        }
+        if (underscore < 0 || dot < 0 || underscore >= dot) return null;
 
-        return fileName.substring(underscoreIndex + 1, dotIndex).trim();
+        return fileName.substring(underscore + 1, dot).trim();
     }
 }
