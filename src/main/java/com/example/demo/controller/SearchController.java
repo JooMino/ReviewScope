@@ -5,7 +5,6 @@ import com.example.demo.crawl.CrawlQueue;
 import com.example.demo.domain.CrawlReport;
 import com.example.demo.domain.SourceMap;
 import com.example.demo.repository.CrawlReportRepository;
-import com.example.demo.repository.ReportStatsRepository;
 import com.example.demo.repository.SourceMapRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,7 +27,7 @@ import java.util.stream.Collectors;
 
 @Controller
 public class SearchController {
-	private final ReportStatsRepository reportStatsRepository;
+
     private final CrawlQueue crawlQueue;
     private final CrawlReportRepository crawlReportRepository;
     private final SourceMapRepository sourceMapRepository;
@@ -37,13 +36,11 @@ public class SearchController {
     public SearchController(
             CrawlQueue crawlQueue,
             CrawlReportRepository crawlReportRepository,
-            SourceMapRepository sourceMapRepository,
-            ReportStatsRepository reportStatsRepository
+            SourceMapRepository sourceMapRepository
     ) {
         this.crawlQueue = crawlQueue;
         this.crawlReportRepository = crawlReportRepository;
         this.sourceMapRepository = sourceMapRepository;
-        this.reportStatsRepository = reportStatsRepository;
     }
 
     @GetMapping("/")
@@ -158,18 +155,6 @@ public class SearchController {
                 }
             }
 
-            Map<String, Object> stats = new HashMap<>();
-
-            reportStatsRepository.findTopByKeywordOrderByCreatedAtDesc(keyword)
-                    .ifPresentOrElse(reportStats -> {
-                        stats.put("mentionCount", reportStats.getMentionCount());
-                        stats.put("positiveCount", reportStats.getPositiveCount());
-                        stats.put("negativeCount", reportStats.getNegativeCount());
-                    }, () -> {
-                        stats.put("mentionCount", 0);
-                        stats.put("positiveCount", 0);
-                        stats.put("negativeCount", 0);
-                    });
 
             Map<String, Object> result = new HashMap<>();
             result.put("summary", summary);
@@ -178,7 +163,7 @@ public class SearchController {
             result.put("pros", pros);
             result.put("cons", cons);
             result.put("models", models);
-            result.put("stats", stats);
+
 
             return result;
 

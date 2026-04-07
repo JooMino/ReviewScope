@@ -8,7 +8,6 @@ import com.example.demo.dto.SourceItem;
 import com.example.demo.dto.SourceMapRequest;
 import com.example.demo.repository.CrawlReportRepository;
 import com.example.demo.repository.SourceMapRepository;
-import com.example.demo.service.ReportStatsService;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -23,17 +22,15 @@ public class CrawlApiController {
     private final CrawlQueue crawlQueue;
     private final CrawlReportRepository crawlReportRepository;
     private final SourceMapRepository sourceMapRepository;
-    private final ReportStatsService reportStatsService;
+
     public CrawlApiController(
             CrawlQueue crawlQueue,
             CrawlReportRepository crawlReportRepository,
-            SourceMapRepository sourceMapRepository,
-            ReportStatsService reportStatsService 
+            SourceMapRepository sourceMapRepository
     ) {
         this.crawlQueue = crawlQueue;
         this.crawlReportRepository = crawlReportRepository;
         this.sourceMapRepository = sourceMapRepository;
-        this.reportStatsService = reportStatsService;
     }
 
     @GetMapping("/next")
@@ -92,7 +89,6 @@ public class CrawlApiController {
             report.setCreatedAt(LocalDateTime.now());
 
             crawlReportRepository.save(report);
-            reportStatsService.saveStats(keyword, incomingContent, report.getCreatedAt());
             return "SUCCESS report saved";
         }
 
