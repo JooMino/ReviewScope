@@ -710,3 +710,143 @@
         height: 88px;
     }
 }
+.compare-chart-area {
+    min-height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.compare-chart-empty {
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+/* 원형 비교 차트 */
+.radial-compare-wrap {
+    position: relative;
+    width: 340px;
+    height: 340px;
+    margin: 0 auto;
+}
+
+.radial-compare-core {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    margin: 80px auto 0;
+    position: relative;
+    background: conic-gradient(
+        #6366f1 0deg 120deg,
+        #8b5cf6 120deg 210deg,
+        #06b6d4 210deg 290deg,
+        #f59e0b 290deg 360deg
+    );
+    box-shadow: inset 0 0 0 16px #fff;
+}
+
+.radial-compare-center {
+    position: absolute;
+    inset: 32px;
+    background: #fff;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+    text-align: center;
+}
+
+.radial-compare-center strong {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.radial-compare-center span {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 4px;
+}
+
+.radial-label {
+    position: absolute;
+    width: 130px;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.radial-label strong {
+    display: block;
+    color: #0f172a;
+    font-size: 13px;
+    margin-bottom: 2px;
+}
+
+.radial-label span {
+    color: #64748b;
+    font-size: 12px;
+}
+
+.radial-line {
+    position: absolute;
+    background: #cbd5e1;
+    transform-origin: left center;
+    height: 2px;
+}
+
+.radial-pos-0 { top: 20px; left: 110px; text-align: center; }
+.radial-pos-1 { top: 105px; right: -20px; text-align: left; }
+.radial-pos-2 { bottom: 10px; left: 110px; text-align: center; }
+.radial-pos-3 { top: 105px; left: -20px; text-align: right; }
+
+.line-pos-0 { top: 82px; left: 170px; width: 2px; height: 46px; }
+.line-pos-1 { top: 170px; left: 246px; width: 60px; transform: rotate(0deg); }
+.line-pos-2 { top: 252px; left: 170px; width: 2px; height: 46px; }
+.line-pos-3 { top: 170px; left: 36px; width: 60px; transform: rotate(0deg); }
+
+/* 막대그래프 fallback */
+.compare-bar-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.compare-bar-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.compare-bar-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 14px;
+}
+
+.compare-bar-meta span {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.compare-bar-meta strong {
+    color: #475569;
+    font-weight: 700;
+}
+
+.compare-bar-track {
+    width: 100%;
+    height: 10px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+}
+
+.compare-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+}

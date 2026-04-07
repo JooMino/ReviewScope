@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>ReviewScope - 분석 결과</title>
-    <link rel="stylesheet" href="/style.css">
-	<link rel="stylesheet" href="/result.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="result.css">
 </head>
 <body>
 <div class="left-sidebar">
@@ -20,7 +20,6 @@
 </div>
 
 <div class="main-container analyze-result-layout">
-    <!-- 좌측 사이드 필터/검색 -->
     <aside class="result-sidebar">
         <section class="section-card result-search-card">
             <div class="result-search-label">다른 키워드 분석</div>
@@ -78,7 +77,6 @@
         </section>
     </aside>
 
-    <!-- 우측 메인 대시보드 -->
     <main class="result-main">
         <header class="result-page-header">
             <div>
@@ -105,31 +103,7 @@
                         <div class="hero-card-label">진행 상태</div>
                         <div class="hero-status" id="heroStatus">대기 중</div>
                     </div>
-                    <span class="card-badge">장단점 비율</span>
-                </div>
-                <div class="hero-donut-row">
-                    <div class="sentiment-donut" id="sentimentDonut" style="--positive-ratio: 65%;">
-                        <div class="sentiment-donut-inner">
-                            <strong id="donutCenterText">65%</strong>
-                            <span>긍정</span>
-                        </div>
-                    </div>
-                    <div class="sentiment-legend">
-                        <div class="legend-item positive">
-                            <span class="legend-dot"></span>
-                            <div>
-                                <strong id="positiveRatio">65%</strong>
-                                <p>장점 비율</p>
-                            </div>
-                        </div>
-                        <div class="legend-item negative">
-                            <span class="legend-dot"></span>
-                            <div>
-                                <strong id="negativeRatio">35%</strong>
-                                <p>단점 비율</p>
-                            </div>
-                        </div>
-                    </div>
+                    <span class="card-badge">리포트 상태</span>
                 </div>
                 <p class="hero-subtext" id="heroStatusText">작업 큐와 DB 상태를 확인하고 있습니다.</p>
             </div>
@@ -157,21 +131,10 @@
                 <article class="section-card dashboard-card">
                     <div class="dashboard-card-header">
                         <h2>📈 비교 제품 언급량</h2>
-                        <span class="card-badge">예시 UI</span>
+                        <span class="card-badge">실제 언급 수 기준</span>
                     </div>
-                    <div class="mock-chart-list gold">
-                        <div class="bar-row">
-                            <div class="bar-meta"><span>QCY H3</span><strong>32%</strong></div>
-                            <div class="bar-track"><div class="bar-fill gold-fill" style="width:32%;"></div></div>
-                        </div>
-                        <div class="bar-row">
-                            <div class="bar-meta"><span>앤커 Q45</span><strong>24%</strong></div>
-                            <div class="bar-track"><div class="bar-fill gold-fill" style="width:24%;"></div></div>
-                        </div>
-                        <div class="bar-row">
-                            <div class="bar-meta"><span>CH720N</span><strong>16%</strong></div>
-                            <div class="bar-track"><div class="bar-fill gold-fill" style="width:16%;"></div></div>
-                        </div>
+                    <div id="compareChartArea" class="compare-chart-area">
+                        <div class="compare-chart-empty">불러오는 중...</div>
                     </div>
                 </article>
             </section>
@@ -198,18 +161,17 @@
                 </article>
             </section>
 
-
             <section class="section-card dashboard-card">
                 <div class="dashboard-card-header">
                     <h2>🔗 장단점 근거 링크</h2>
                     <span class="card-badge">예시 UI</span>
                 </div>
-				<div class="reference-list" id="referenceList">
-				    <div class="reference-item">
-				        <strong>불러오는 중...</strong>
-				        <p>근거 링크를 준비하고 있습니다.</p>
-				    </div>
-				</div>
+                <div class="reference-list" id="referenceList">
+                    <div class="reference-item">
+                        <strong>불러오는 중...</strong>
+                        <p>근거 링크를 준비하고 있습니다.</p>
+                    </div>
+                </div>
             </section>
 
             <section class="section-card dashboard-card">
@@ -237,15 +199,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const dashboardSection = document.getElementById('dashboardSection');
 
     const positiveSummary = document.getElementById('positiveSummary');
-    const positiveRatio = document.getElementById('positiveRatio');
-    const negativeRatio = document.getElementById('negativeRatio');
-    const donutCenterText = document.getElementById('donutCenterText');
-    const sentimentDonut = document.getElementById('sentimentDonut');
     const negativeSummary = document.getElementById('negativeSummary');
     const prosList = document.getElementById('prosList');
     const consList = document.getElementById('consList');
     const modelsList = document.getElementById('modelsList');
     const referenceList = document.getElementById('referenceList');
+    const compareChartArea = document.getElementById('compareChartArea');
 
     const heroKeyword = document.getElementById('heroKeyword');
     const pageTitle = document.getElementById('pageTitle');
@@ -264,7 +223,9 @@ document.addEventListener('DOMContentLoaded', function () {
         dashboardSection.style.display = 'block';
         positiveSummary.textContent = '내용 없음';
         negativeSummary.textContent = '내용 없음';
-        updateSentimentRatio([], []);
+        if (compareChartArea) {
+            compareChartArea.innerHTML = `<div class="compare-chart-empty">비교 제품 데이터 없음</div>`;
+        }
         return;
     }
 
@@ -296,17 +257,6 @@ document.addEventListener('DOMContentLoaded', function () {
             .replace(/'/g, '&#039;');
     }
 
-    function renderList(target, items, emptyText) {
-        if (!Array.isArray(items) || items.length === 0) {
-            target.innerHTML = `<li>${escapeHtml(emptyText)}</li>`;
-            return;
-        }
-
-        target.innerHTML = items.map(item => {
-            return `<li>${escapeHtml(clean(item))}</li>`;
-        }).join('');
-    }
-
     function renderPointList(target, items, emptyText) {
         if (!Array.isArray(items) || items.length === 0) {
             target.innerHTML = `<li>${escapeHtml(emptyText)}</li>`;
@@ -316,6 +266,24 @@ document.addEventListener('DOMContentLoaded', function () {
         target.innerHTML = items.map(item => {
             const point = clean(item && item.point ? item.point : '');
             return `<li>${escapeHtml(point)}</li>`;
+        }).join('');
+    }
+
+    function renderModelList(target, items, emptyText) {
+        if (!Array.isArray(items) || items.length === 0) {
+            target.innerHTML = `<li>${escapeHtml(emptyText)}</li>`;
+            return;
+        }
+
+        target.innerHTML = items.map(item => {
+            const name = clean(item?.name || '');
+            const context = clean(item?.context || '');
+            const count = Number(item?.mentionCount || 0);
+
+            if (context) {
+                return `<li>${escapeHtml(name)} - ${escapeHtml(context)} (${count}회)</li>`;
+            }
+            return `<li>${escapeHtml(name)} (${count}회)</li>`;
         }).join('');
     }
 
@@ -364,21 +332,79 @@ document.addEventListener('DOMContentLoaded', function () {
         }).join('');
     }
 
-    function updateSentimentRatio(stats) {
-        const positiveCount = Number(stats?.positiveCount || 0);
-        const negativeCount = Number(stats?.negativeCount || 0);
-        const total = positiveCount + negativeCount;
+    function renderComparisonChart(models) {
+        if (!compareChartArea) return;
 
-        const positive = total > 0 ? Math.round((positiveCount / total) * 100) : 50;
-        const negative = total > 0 ? Math.round((negativeCount / total) * 100) : 50;
+        if (!Array.isArray(models) || models.length === 0) {
+            compareChartArea.innerHTML = `<div class="compare-chart-empty">비교 제품 데이터 없음</div>`;
+            return;
+        }
 
-        positiveRatio.textContent = `${positive}%`;
-        negativeRatio.textContent = `${negative}%`;
-        donutCenterText.textContent = `${positive}%`;
-        sentimentDonut.style.setProperty('--positive-ratio', `${positive}%`);
+        const sorted = [...models]
+            .filter(item => item && item.name)
+            .sort((a, b) => Number(b.mentionCount || 0) - Number(a.mentionCount || 0));
+
+        if (sorted.length <= 4) {
+            renderRadialComparison(sorted);
+        } else {
+            renderBarComparison(sorted);
+        }
     }
 
-    function setErrorState(title, desc, summaryMessage) {
+    function renderRadialComparison(models) {
+        const total = models.reduce((sum, item) => sum + Number(item.mentionCount || 0), 0);
+
+        const labelHtml = models.map((item, index) => {
+            const percent = total > 0 ? Math.round((Number(item.mentionCount || 0) / total) * 100) : 0;
+
+            return `
+                <div class="radial-line line-pos-${index}"></div>
+                <div class="radial-label radial-pos-${index}">
+                    <strong>${escapeHtml(clean(item.name || ''))}</strong>
+                    <span>${Number(item.mentionCount || 0)}회 · ${percent}%</span>
+                </div>
+            `;
+        }).join('');
+
+        compareChartArea.innerHTML = `
+            <div class="radial-compare-wrap">
+                ${labelHtml}
+                <div class="radial-compare-core">
+                    <div class="radial-compare-center">
+                        <strong>${models.length}개</strong>
+                        <span>비교 제품</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderBarComparison(models) {
+        const maxCount = Math.max(...models.map(item => Number(item.mentionCount || 0)), 1);
+
+        compareChartArea.innerHTML = `
+            <div class="compare-bar-list">
+                ${models.map(item => {
+                    const count = Number(item.mentionCount || 0);
+                    const width = Math.max((count / maxCount) * 100, 4);
+
+                    return `
+                        <div class="compare-bar-row">
+                            <div class="compare-bar-meta">
+                                <span>${escapeHtml(clean(item.name || ''))}</span>
+                                <strong>${count}회</strong>
+                            </div>
+                            <div class="compare-bar-track">
+                                <div class="compare-bar-fill" style="width:${width}%;"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+
+    function setErrorState(title, desc) {
         heroStatus.textContent = title;
         heroStatusText.textContent = desc;
         jobStatus.textContent = title;
@@ -386,13 +412,16 @@ document.addEventListener('DOMContentLoaded', function () {
         loadingSection.style.display = 'none';
         dashboardSection.style.display = 'block';
 
-        updateSentimentRatio([], []);
         positiveSummary.textContent = '내용 없음';
         negativeSummary.textContent = '내용 없음';
 
         prosList.innerHTML = '<li>데이터 없음</li>';
         consList.innerHTML = '<li>데이터 없음</li>';
         modelsList.innerHTML = '<li>데이터 없음</li>';
+
+        if (compareChartArea) {
+            compareChartArea.innerHTML = `<div class="compare-chart-empty">비교 제품 데이터 없음</div>`;
+        }
 
         if (referenceList) {
             referenceList.innerHTML = `
@@ -409,7 +438,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(res => res.json())
             .then(data => {
                 if (data.error) {
-                    setErrorState('결과 없음', data.error, `결과를 불러오지 못했습니다. (${data.error})`);
+                    setErrorState('결과 없음', `결과를 불러오지 못했습니다. (${data.error})`);
                     return;
                 }
 
@@ -417,13 +446,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 heroStatusText.textContent = '리포트 로딩이 완료되었습니다.';
                 jobStatus.textContent = '완료';
 
-                updateSentimentRatio(data.pros, data.cons);
                 positiveSummary.textContent = clean(data.positiveSummary || '내용 없음');
                 negativeSummary.textContent = clean(data.negativeSummary || '내용 없음');
 
                 renderPointList(prosList, data.pros, '장점 데이터 없음');
                 renderPointList(consList, data.cons, '단점 데이터 없음');
-                renderList(modelsList, data.models, '언급된 모델 없음');
+                renderModelList(modelsList, data.models, '언급된 모델 없음');
+                renderComparisonChart(data.models);
 
                 if (referenceList) {
                     renderReferences(referenceList, data.pros, data.cons);
@@ -434,7 +463,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch(err => {
                 console.error(err);
-                setErrorState('오류', '결과 조회 중 오류가 발생했습니다.', '결과를 불러오지 못했습니다.');
+                setErrorState('오류', '결과 조회 중 오류가 발생했습니다.');
             });
     }
 
@@ -452,7 +481,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         fetchFinalResult(keyword);
                     } else if (data.status === 'FAILED') {
                         clearInterval(interval);
-                        setErrorState('실패', '분석 작업이 실패했습니다.', '분석에 실패했습니다.');
+                        setErrorState('실패', '분석 작업이 실패했습니다.');
                     } else {
                         heroStatus.textContent = '분석 중';
                         heroStatusText.textContent = '커뮤니티 데이터를 수집 중입니다.';
@@ -462,7 +491,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 .catch(err => {
                     clearInterval(interval);
                     console.error(err);
-                    setErrorState('오류', '상태 확인 중 오류가 발생했습니다.', '상태 확인 중 오류가 발생했습니다.');
+                    setErrorState('오류', '상태 확인 중 오류가 발생했습니다.');
                 });
         }, 2000);
     }
