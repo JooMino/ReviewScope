@@ -1,8 +1,8 @@
-package com.example.demo.crawl;
+package com.example.demo.domain;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-
+import com.example.demo.crawl.CrawlJob;
 @Entity
 @Table(name = "crawl_reports")
 public class CrawlReport {

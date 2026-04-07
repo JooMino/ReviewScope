@@ -1,4 +1,4 @@
-package com.example.demo.util;
+package com.example.demo.dto;
 
 public class ReviewDto {
     private String title;      // 제목

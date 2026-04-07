@@ -2,10 +2,11 @@ package com.example.demo.controller;
 
 import com.example.demo.crawl.CrawlJob;
 import com.example.demo.crawl.CrawlQueue;
-import com.example.demo.crawl.CrawlReport;
-import com.example.demo.crawl.CrawlReportRepository;
-import com.example.demo.crawl.SourceMap;
-import com.example.demo.crawl.SourceMapRepository;
+import com.example.demo.domain.CrawlReport;
+import com.example.demo.domain.SourceMap;
+import com.example.demo.repository.CrawlReportRepository;
+import com.example.demo.repository.ReportStatsRepository;
+import com.example.demo.repository.SourceMapRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Controller;
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
 
 @Controller
 public class SearchController {
-
+	private final ReportStatsRepository reportStatsRepository;
     private final CrawlQueue crawlQueue;
     private final CrawlReportRepository crawlReportRepository;
     private final SourceMapRepository sourceMapRepository;
@@ -36,11 +37,13 @@ public class SearchController {
     public SearchController(
             CrawlQueue crawlQueue,
             CrawlReportRepository crawlReportRepository,
-            SourceMapRepository sourceMapRepository
+            SourceMapRepository sourceMapRepository,
+            ReportStatsRepository reportStatsRepository
     ) {
         this.crawlQueue = crawlQueue;
         this.crawlReportRepository = crawlReportRepository;
         this.sourceMapRepository = sourceMapRepository;
+        this.reportStatsRepository = reportStatsRepository;
     }
 
     @GetMapping("/")
@@ -155,6 +158,19 @@ public class SearchController {
                 }
             }
 
+            Map<String, Object> stats = new HashMap<>();
+
+            reportStatsRepository.findTopByKeywordOrderByCreatedAtDesc(keyword)
+                    .ifPresentOrElse(reportStats -> {
+                        stats.put("mentionCount", reportStats.getMentionCount());
+                        stats.put("positiveCount", reportStats.getPositiveCount());
+                        stats.put("negativeCount", reportStats.getNegativeCount());
+                    }, () -> {
+                        stats.put("mentionCount", 0);
+                        stats.put("positiveCount", 0);
+                        stats.put("negativeCount", 0);
+                    });
+
             Map<String, Object> result = new HashMap<>();
             result.put("summary", summary);
             result.put("positiveSummary", positiveSummary);
@@ -162,6 +178,7 @@ public class SearchController {
             result.put("pros", pros);
             result.put("cons", cons);
             result.put("models", models);
+            result.put("stats", stats);
 
             return result;
 

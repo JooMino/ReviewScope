@@ -1,4 +1,4 @@
-package com.example.demo.crawl;
+package com.example.demo.domain;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;

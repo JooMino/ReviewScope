@@ -1,4 +1,4 @@
-package com.example.demo.controller;
+package com.example.demo.dto;
 
 public class CrawlResultRequest {
     private String keyword;

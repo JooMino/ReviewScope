@@ -100,37 +100,8 @@
             </div>
 
             <div class="section-card hero-status-card">
-                <div class="dashboard-card-header hero-status-header">
-                    <div>
-                        <div class="hero-card-label">진행 상태</div>
-                        <div class="hero-status" id="heroStatus">대기 중</div>
-                    </div>
-                    <span class="card-badge">장단점 비율</span>
-                </div>
-                <div class="hero-donut-row">
-                    <div class="sentiment-donut" id="sentimentDonut" style="--positive-ratio: 65%;">
-                        <div class="sentiment-donut-inner">
-                            <strong id="donutCenterText">65%</strong>
-                            <span>긍정</span>
-                        </div>
-                    </div>
-                    <div class="sentiment-legend">
-                        <div class="legend-item positive">
-                            <span class="legend-dot"></span>
-                            <div>
-                                <strong id="positiveRatio">65%</strong>
-                                <p>장점 비율</p>
-                            </div>
-                        </div>
-                        <div class="legend-item negative">
-                            <span class="legend-dot"></span>
-                            <div>
-                                <strong id="negativeRatio">35%</strong>
-                                <p>단점 비율</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <div class="hero-card-label">진행 상태</div>
+                <div class="hero-status" id="heroStatus">대기 중</div>
                 <p class="hero-subtext" id="heroStatusText">작업 큐와 DB 상태를 확인하고 있습니다.</p>
             </div>
         </section>
@@ -144,7 +115,14 @@
         </div>
 
         <div id="dashboardSection" class="dashboard-section" style="display:none;">
-            <section class="dashboard-grid compare-grid">
+            <section class="dashboard-grid top-grid">
+                <article class="section-card dashboard-card">
+                    <div class="dashboard-card-header">
+                        <h2>한줄 요약</h2>
+                    </div>
+                    <p class="summary-text" id="summaryText">결과를 불러오는 중입니다.</p>
+                </article>
+
                 <article class="section-card dashboard-card">
                     <div class="dashboard-card-header">
                         <h2>함께 언급된 모델</h2>
@@ -152,27 +130,6 @@
                     <ul class="simple-list" id="modelsList">
                         <li>불러오는 중...</li>
                     </ul>
-                </article>
-
-                <article class="section-card dashboard-card">
-                    <div class="dashboard-card-header">
-                        <h2>📈 비교 제품 언급량</h2>
-                        <span class="card-badge">예시 UI</span>
-                    </div>
-                    <div class="mock-chart-list gold">
-                        <div class="bar-row">
-                            <div class="bar-meta"><span>QCY H3</span><strong>32%</strong></div>
-                            <div class="bar-track"><div class="bar-fill gold-fill" style="width:32%;"></div></div>
-                        </div>
-                        <div class="bar-row">
-                            <div class="bar-meta"><span>앤커 Q45</span><strong>24%</strong></div>
-                            <div class="bar-track"><div class="bar-fill gold-fill" style="width:24%;"></div></div>
-                        </div>
-                        <div class="bar-row">
-                            <div class="bar-meta"><span>CH720N</span><strong>16%</strong></div>
-                            <div class="bar-track"><div class="bar-fill gold-fill" style="width:16%;"></div></div>
-                        </div>
-                    </div>
                 </article>
             </section>
 
@@ -198,6 +155,49 @@
                 </article>
             </section>
 
+            <section class="dashboard-grid chart-grid">
+                <article class="section-card dashboard-card">
+                    <div class="dashboard-card-header">
+                        <h2>📊 주요 이슈 비율</h2>
+                        <span class="card-badge">예시 UI</span>
+                    </div>
+                    <div class="mock-chart-list">
+                        <div class="bar-row">
+                            <div class="bar-meta"><span>불량 이슈</span><strong>18%</strong></div>
+                            <div class="bar-track"><div class="bar-fill" style="width:18%;"></div></div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-meta"><span>배터리 문제</span><strong>26%</strong></div>
+                            <div class="bar-track"><div class="bar-fill" style="width:26%;"></div></div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-meta"><span>착용감 압박</span><strong>14%</strong></div>
+                            <div class="bar-track"><div class="bar-fill" style="width:14%;"></div></div>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="section-card dashboard-card">
+                    <div class="dashboard-card-header">
+                        <h2>📈 비교 제품 언급량</h2>
+                        <span class="card-badge">예시 UI</span>
+                    </div>
+                    <div class="mock-chart-list gold">
+                        <div class="bar-row">
+                            <div class="bar-meta"><span>QCY H3</span><strong>32%</strong></div>
+                            <div class="bar-track"><div class="bar-fill gold-fill" style="width:32%;"></div></div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-meta"><span>앤커 Q45</span><strong>24%</strong></div>
+                            <div class="bar-track"><div class="bar-fill gold-fill" style="width:24%;"></div></div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-meta"><span>CH720N</span><strong>16%</strong></div>
+                            <div class="bar-track"><div class="bar-fill gold-fill" style="width:16%;"></div></div>
+                        </div>
+                    </div>
+                </article>
+            </section>
 
             <section class="section-card dashboard-card">
                 <div class="dashboard-card-header">
@@ -236,11 +236,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const loadingSection = document.getElementById('loadingSection');
     const dashboardSection = document.getElementById('dashboardSection');
 
+    const summaryText = document.getElementById('summaryText');
     const positiveSummary = document.getElementById('positiveSummary');
-    const positiveRatio = document.getElementById('positiveRatio');
-    const negativeRatio = document.getElementById('negativeRatio');
-    const donutCenterText = document.getElementById('donutCenterText');
-    const sentimentDonut = document.getElementById('sentimentDonut');
     const negativeSummary = document.getElementById('negativeSummary');
     const prosList = document.getElementById('prosList');
     const consList = document.getElementById('consList');
@@ -262,9 +259,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!keyword) {
         loadingSection.style.display = 'none';
         dashboardSection.style.display = 'block';
-        positiveSummary.textContent = '내용 없음';
-        negativeSummary.textContent = '내용 없음';
-        updateSentimentRatio([], []);
+        summaryText.textContent = '잘못된 접근입니다. 분석 키워드가 없습니다.';
         return;
     }
 
@@ -364,20 +359,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }).join('');
     }
 
-    function updateSentimentRatio(stats) {
-        const positiveCount = Number(stats?.positiveCount || 0);
-        const negativeCount = Number(stats?.negativeCount || 0);
-        const total = positiveCount + negativeCount;
-
-        const positive = total > 0 ? Math.round((positiveCount / total) * 100) : 50;
-        const negative = total > 0 ? Math.round((negativeCount / total) * 100) : 50;
-
-        positiveRatio.textContent = `${positive}%`;
-        negativeRatio.textContent = `${negative}%`;
-        donutCenterText.textContent = `${positive}%`;
-        sentimentDonut.style.setProperty('--positive-ratio', `${positive}%`);
-    }
-
     function setErrorState(title, desc, summaryMessage) {
         heroStatus.textContent = title;
         heroStatusText.textContent = desc;
@@ -386,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function () {
         loadingSection.style.display = 'none';
         dashboardSection.style.display = 'block';
 
-        updateSentimentRatio([], []);
+        summaryText.textContent = summaryMessage;
         positiveSummary.textContent = '내용 없음';
         negativeSummary.textContent = '내용 없음';
 
@@ -417,7 +398,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 heroStatusText.textContent = '리포트 로딩이 완료되었습니다.';
                 jobStatus.textContent = '완료';
 
-                updateSentimentRatio(data.pros, data.cons);
+                summaryText.textContent = clean(data.summary || keyword);
                 positiveSummary.textContent = clean(data.positiveSummary || '내용 없음');
                 negativeSummary.textContent = clean(data.negativeSummary || '내용 없음');
 

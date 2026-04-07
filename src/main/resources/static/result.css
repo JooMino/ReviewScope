@@ -580,3 +580,133 @@
         gap: 8px;
     }
 }
+
+.compare-grid {
+    grid-template-columns: 1fr 1fr;
+}
+
+.hero-status-header {
+    margin-bottom: 18px;
+}
+
+.hero-donut-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 14px;
+}
+
+.sentiment-donut {
+    --positive-ratio: 65%;
+    width: 156px;
+    height: 156px;
+    border-radius: 50%;
+    background: conic-gradient(
+        var(--accent) 0 var(--positive-ratio),
+        var(--accent-red) var(--positive-ratio) 100%
+    );
+    position: relative;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sentiment-donut::before {
+    content: '';
+    position: absolute;
+    width: 104px;
+    height: 104px;
+    border-radius: 50%;
+    background: #181818;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+}
+
+.sentiment-donut-inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    text-align: center;
+}
+
+.sentiment-donut-inner strong {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.sentiment-donut-inner span {
+    font-size: 12px;
+    color: var(--text-sub);
+}
+
+.sentiment-legend {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.legend-item.positive .legend-dot {
+    background: var(--accent);
+}
+
+.legend-item.negative .legend-dot {
+    background: var(--accent-red);
+}
+
+.legend-item strong {
+    display: block;
+    font-size: 18px;
+    line-height: 1.2;
+}
+
+.legend-item p {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: var(--text-sub);
+}
+
+@media (max-width: 1280px) {
+    .compare-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .hero-donut-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .sentiment-donut {
+        width: 132px;
+        height: 132px;
+    }
+
+    .sentiment-donut::before {
+        width: 88px;
+        height: 88px;
+    }
+}

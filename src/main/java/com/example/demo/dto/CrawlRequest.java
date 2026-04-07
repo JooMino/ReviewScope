@@ -1,4 +1,4 @@
-package com.example.demo.crawl;
+package com.example.demo.dto;
 
 public class CrawlRequest {
 
