@@ -1,4 +1,4 @@
-package com.example.service;
+package com.example.demo.service;
 import com.example.demo.domain.ReportStats;
 import com.example.demo.repository.ReportStatsRepository;
 import com.fasterxml.jackson.databind.JsonNode;

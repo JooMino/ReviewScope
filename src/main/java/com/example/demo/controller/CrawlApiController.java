@@ -8,7 +8,7 @@ import com.example.demo.dto.SourceItem;
 import com.example.demo.dto.SourceMapRequest;
 import com.example.demo.repository.CrawlReportRepository;
 import com.example.demo.repository.SourceMapRepository;
-import com.example.service.ReportStatsService;
+import com.example.demo.service.ReportStatsService;
 
 import java.time.LocalDateTime;
 import java.util.Map;
