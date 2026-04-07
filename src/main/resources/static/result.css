@@ -722,131 +722,105 @@
     font-size: 14px;
 }
 
-/* 원형 비교 차트 */
-.radial-compare-wrap {
-    position: relative;
-    width: 340px;
-    height: 340px;
-    margin: 0 auto;
+.compare-donut-layout {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
 }
 
-.radial-compare-core {
-    width: 180px;
-    height: 180px;
+.compare-donut-wrap {
+    flex: 0 0 240px;
+    display: flex;
+    justify-content: center;
+}
+
+.compare-donut-chart {
+    width: 220px;
+    height: 220px;
     border-radius: 50%;
-    margin: 80px auto 0;
     position: relative;
-    background: conic-gradient(
-        #6366f1 0deg 120deg,
-        #8b5cf6 120deg 210deg,
-        #06b6d4 210deg 290deg,
-        #f59e0b 290deg 360deg
-    );
-    box-shadow: inset 0 0 0 16px #fff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
 
-.radial-compare-center {
+.compare-donut-center {
     position: absolute;
-    inset: 32px;
-    background: #fff;
+    inset: 36px;
     border-radius: 50%;
+    background: #0f1115;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+    color: #f8fafc;
     text-align: center;
 }
 
-.radial-compare-center strong {
-    font-size: 20px;
-    font-weight: 700;
-    color: #0f172a;
+.compare-donut-center strong {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
 }
 
-.radial-compare-center span {
+.compare-donut-center span {
     font-size: 12px;
-    color: #64748b;
-    margin-top: 4px;
+    color: #94a3b8;
+    margin-top: 6px;
 }
 
-.radial-label {
-    position: absolute;
-    width: 130px;
-    font-size: 13px;
-    line-height: 1.4;
-}
-
-.radial-label strong {
-    display: block;
-    color: #0f172a;
-    font-size: 13px;
-    margin-bottom: 2px;
-}
-
-.radial-label span {
-    color: #64748b;
-    font-size: 12px;
-}
-
-.radial-line {
-    position: absolute;
-    background: #cbd5e1;
-    transform-origin: left center;
-    height: 2px;
-}
-
-.radial-pos-0 { top: 20px; left: 110px; text-align: center; }
-.radial-pos-1 { top: 105px; right: -20px; text-align: left; }
-.radial-pos-2 { bottom: 10px; left: 110px; text-align: center; }
-.radial-pos-3 { top: 105px; left: -20px; text-align: right; }
-
-.line-pos-0 { top: 82px; left: 170px; width: 2px; height: 46px; }
-.line-pos-1 { top: 170px; left: 246px; width: 60px; transform: rotate(0deg); }
-.line-pos-2 { top: 252px; left: 170px; width: 2px; height: 46px; }
-.line-pos-3 { top: 170px; left: 36px; width: 60px; transform: rotate(0deg); }
-
-/* 막대그래프 fallback */
-.compare-bar-list {
-    width: 100%;
+.compare-legend-list {
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 14px;
 }
 
-.compare-bar-row {
+.compare-legend-item {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.compare-bar-meta {
-    display: flex;
+    align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 14px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.compare-legend-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.compare-color-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.compare-model-name {
+    color: #e5e7eb;
     font-size: 14px;
+    font-weight: 500;
+    word-break: break-word;
 }
 
-.compare-bar-meta span {
-    color: #0f172a;
-    font-weight: 600;
-}
-
-.compare-bar-meta strong {
-    color: #475569;
+.compare-model-percent {
+    color: #c4b5fd;
+    font-size: 14px;
     font-weight: 700;
+    flex-shrink: 0;
 }
 
-.compare-bar-track {
-    width: 100%;
-    height: 10px;
-    border-radius: 999px;
-    background: #e2e8f0;
-    overflow: hidden;
-}
+@media (max-width: 900px) {
+    .compare-donut-layout {
+        flex-direction: column;
+        align-items: center;
+    }
 
-.compare-bar-fill {
-    height: 100%;
-    border-radius: 999px;
-    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    .compare-legend-list {
+        width: 100%;
+    }
 }

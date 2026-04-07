@@ -344,62 +344,53 @@ document.addEventListener('DOMContentLoaded', function () {
             .filter(item => item && item.name)
             .sort((a, b) => Number(b.mentionCount || 0) - Number(a.mentionCount || 0));
 
-        if (sorted.length <= 4) {
-            renderRadialComparison(sorted);
-        } else {
-            renderBarComparison(sorted);
-        }
+        renderDonutComparison(sorted);
     }
 
-    function renderRadialComparison(models) {
+    function renderDonutComparison(models) {
+        const colors = ['#7c3aed', '#8b5cf6', '#06b6d4', '#f59e0b', '#10b981', '#ef4444'];
         const total = models.reduce((sum, item) => sum + Number(item.mentionCount || 0), 0);
 
-        const labelHtml = models.map((item, index) => {
-            const percent = total > 0 ? Math.round((Number(item.mentionCount || 0) / total) * 100) : 0;
+        if (total === 0) {
+            compareChartArea.innerHTML = `<div class="compare-chart-empty">비교 제품 데이터 없음</div>`;
+            return;
+        }
+
+        let currentDeg = 0;
+        const gradientParts = [];
+        const legendHtml = models.map((item, index) => {
+            const count = Number(item.mentionCount || 0);
+            const percent = Math.round((count / total) * 100);
+            const deg = (count / total) * 360;
+            const color = colors[index % colors.length];
+
+            gradientParts.push(`${color} ${currentDeg}deg ${currentDeg + deg}deg`);
+            currentDeg += deg;
 
             return `
-                <div class="radial-line line-pos-${index}"></div>
-                <div class="radial-label radial-pos-${index}">
-                    <strong>${escapeHtml(clean(item.name || ''))}</strong>
-                    <span>${Number(item.mentionCount || 0)}회 · ${percent}%</span>
+                <div class="compare-legend-item">
+                    <div class="compare-legend-left">
+                        <span class="compare-color-dot" style="background:${color};"></span>
+                        <span class="compare-model-name">${escapeHtml(clean(item.name || ''))}</span>
+                    </div>
+                    <strong class="compare-model-percent">${percent}%</strong>
                 </div>
             `;
         }).join('');
 
         compareChartArea.innerHTML = `
-            <div class="radial-compare-wrap">
-                ${labelHtml}
-                <div class="radial-compare-core">
-                    <div class="radial-compare-center">
-                        <strong>${models.length}개</strong>
-                        <span>비교 제품</span>
+            <div class="compare-donut-layout">
+                <div class="compare-donut-wrap">
+                    <div class="compare-donut-chart" style="background: conic-gradient(${gradientParts.join(', ')});">
+                        <div class="compare-donut-center">
+                            <strong>100%</strong>
+                            <span>비교 언급 비중</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
-    }
-
-    function renderBarComparison(models) {
-        const maxCount = Math.max(...models.map(item => Number(item.mentionCount || 0)), 1);
-
-        compareChartArea.innerHTML = `
-            <div class="compare-bar-list">
-                ${models.map(item => {
-                    const count = Number(item.mentionCount || 0);
-                    const width = Math.max((count / maxCount) * 100, 4);
-
-                    return `
-                        <div class="compare-bar-row">
-                            <div class="compare-bar-meta">
-                                <span>${escapeHtml(clean(item.name || ''))}</span>
-                                <strong>${count}회</strong>
-                            </div>
-                            <div class="compare-bar-track">
-                                <div class="compare-bar-fill" style="width:${width}%;"></div>
-                            </div>
-                        </div>
-                    `;
-                }).join('')}
+                <div class="compare-legend-list">
+                    ${legendHtml}
+                </div>
             </div>
         `;
     }
