@@ -68,7 +68,7 @@
     const productData = {
         mouse: [
             { rank: 1, icon: "🖱️", name: "로지텍 G PRO X SUPERLIGHT 2", meta: "무선 · 60g대 초경량",  desc: "가벼운 무게와 안정적인 센서 성능으로 많이 언급되는 대표 게이밍 마우스입니다." },
-            { rank: 2, icon: "🖱️", name: "레이저 데스애더 V3 PRO", meta: "FPS 인기 · 인체공학", price: "179,000원", desc: "손에 잘 맞는 그립감과 센서 성능으로 좋은 평가를 받는 제품입니다." },
+            { rank: 2, icon: "🖱️", name: "레이저 데스애더 V3 PRO", meta: "FPS 인기 · 인체공학", desc: "손에 잘 맞는 그립감과 센서 성능으로 좋은 평가를 받는 제품입니다." },
             { rank: 3, icon: "🖱️", name: "로지텍 G102 2세대", meta: "가성비 유선",  desc: "입문용으로 많이 추천되는 가성비 마우스입니다." },
             { rank: 4, icon: "🖱️", name: "팜그립 게이밍 마우스 A", meta: "팜그립 최적화",  desc: "팜그립 사용자 기준 편한 쉘과 무난한 성능이 장점입니다." },
             { rank: 5, icon: "🖱️", name: "초경량 게이밍 마우스 B", meta: "약 55g", desc: "가벼운 무게를 선호하는 사용자층에서 인기가 있습니다." }
@@ -111,7 +111,6 @@
         detailSpecList.innerHTML = `
             <li><span>카테고리</span><strong>${titleMap[category].replace(" TOP 10", "")}</strong></li>
             <li><span>특징</span><strong>${item.meta}</strong></li>
-            <li><span>가격</span><strong>${item.price}</strong></li>
         `;
     }
 
@@ -130,7 +129,7 @@
                     <div class="product-name">${item.name}</div>
                     <div class="product-meta">${item.meta}</div>
                 </div>
-                <div class="product-price">${item.price}</div>
+           
             `;
 
             div.addEventListener("click", () => renderDetail(item, category));
