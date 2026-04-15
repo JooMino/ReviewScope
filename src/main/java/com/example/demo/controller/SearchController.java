@@ -190,9 +190,22 @@ public class SearchController {
                     .distinct()
                     .toList();
 
-            Map<String, String> hashToUrl = sourceMapRepository
-                    .findByKeywordAndHashValueIn(keyword, hashes)
-                    .stream()
+            System.out.println("=================================");
+            System.out.println("keyword = [" + keyword + "]");
+            System.out.println("point = [" + point + "]");
+            System.out.println("filesRaw = [" + filesRaw + "]");
+            System.out.println("fileNames = " + fileNames);
+            System.out.println("hashes = " + hashes);
+
+            List<SourceMap> found = sourceMapRepository.findByKeywordAndHashValueIn(keyword, hashes);
+            System.out.println("found size = " + found.size());
+            for (SourceMap sm : found) {
+                System.out.println("FOUND => keyword=" + sm.getKeyword()
+                        + ", hash=" + sm.getHashValue()
+                        + ", url=" + sm.getUrl());
+            }
+
+            Map<String, String> hashToUrl = found.stream()
                     .collect(Collectors.toMap(
                             SourceMap::getHashValue,
                             SourceMap::getUrl,
@@ -200,12 +213,18 @@ public class SearchController {
                             LinkedHashMap::new
                     ));
 
+            System.out.println("hashToUrl = " + hashToUrl);
+
             List<Map<String, String>> sources = new ArrayList<>();
             for (String fileName : fileNames) {
                 String hash = extractHashFromFileName(fileName);
+                System.out.println("fileName=" + fileName + ", extractedHash=" + hash);
+
                 if (hash == null) continue;
 
                 String url = hashToUrl.get(hash);
+                System.out.println("matchedUrl=" + url);
+
                 if (url == null || url.isBlank()) continue;
 
                 Map<String, String> source = new LinkedHashMap<>();
@@ -214,6 +233,8 @@ public class SearchController {
                 source.put("url", url);
                 sources.add(source);
             }
+
+            System.out.println("final sources = " + sources);
 
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("point", point);
