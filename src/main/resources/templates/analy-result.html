@@ -317,6 +317,7 @@
                 `;
             }).join('');
         }
+        let compareChartInstance = null;
 
         function renderComparisonChart(models) {
             if (!compareChartArea) return;
@@ -328,12 +329,60 @@
 
             const sorted = [...models]
                 .filter(item => item && item.name)
-                .sort((a, b) => Number(b.mentionCount || 0) - Number(a.mentionCount || 0));
+                .sort((a, b) => Number(b.mentionCount || 0) - Number(a.mentionCount || 0))
+                .slice(0, 5);
 
-            compareChartArea.innerHTML = sorted.map(item => {
-                const count = Number(item.mentionCount || 0);
-                return `<div>${escapeHtml(item.name)} (${count}회)</div>`;
-            }).join('');
+            const total = sorted.reduce((sum, item) => sum + Number(item.mentionCount || 0), 0);
+
+            if (total === 0) {
+                compareChartArea.innerHTML = `<div class="compare-chart-empty">비교 제품 데이터 없음</div>`;
+                return;
+            }
+
+            const colors = ['#8b5cf6', '#22d3ee', '#34d399', '#f59e0b', '#f87171'];
+
+            let currentPercent = 0;
+            const gradientParts = sorted.map((item, index) => {
+                const value = Number(item.mentionCount || 0);
+                const percent = (value / total) * 100;
+                const start = currentPercent;
+                const end = currentPercent + percent;
+                currentPercent = end;
+                return `${colors[index]} ${start}% ${end}%`;
+            });
+
+            const topItem = sorted[0];
+            const topPercent = ((Number(topItem.mentionCount || 0) / total) * 100).toFixed(1);
+
+            compareChartArea.innerHTML = `
+                <div class="compare-donut-layout">
+                    <div class="compare-donut-wrap">
+                        <div class="compare-donut-chart" style="background: conic-gradient(${gradientParts.join(', ')});">
+                            <div class="compare-donut-center">
+                                <strong>${topPercent}%</strong>
+                                <span>TOP<br>${escapeHtml(topItem.name)}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="compare-legend-list">
+                        ${sorted.map((item, index) => {
+                            const count = Number(item.mentionCount || 0);
+                            const percent = ((count / total) * 100).toFixed(1);
+
+                            return `
+                                <div class="compare-legend-item">
+                                    <div class="compare-legend-left">
+                                        <span class="compare-color-dot" style="background:${colors[index]}"></span>
+                                        <span class="compare-model-name">${escapeHtml(item.name)}</span>
+                                    </div>
+                                    <span class="compare-model-percent">${count}회 · ${percent}%</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
         }
 
         function setErrorState(title, message) {
