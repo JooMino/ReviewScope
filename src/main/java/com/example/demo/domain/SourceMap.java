@@ -4,7 +4,12 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "source_map")
+@Table(
+        name = "source_map",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"keyword", "hash_value"})
+        }
+)
 public class SourceMap {
 
     @Id
