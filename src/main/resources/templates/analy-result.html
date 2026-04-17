@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -182,304 +183,262 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const keywordInput = document.getElementById('keywordInput');
-    const resultSearchForm = document.getElementById('resultSearchForm');
+    document.addEventListener('DOMContentLoaded', function () {
+        const keywordInput = document.getElementById('keywordInput');
+        const resultSearchForm = document.getElementById('resultSearchForm');
 
-    const loadingSection = document.getElementById('loadingSection');
-    const dashboardSection = document.getElementById('dashboardSection');
+        const loadingSection = document.getElementById('loadingSection');
+        const dashboardSection = document.getElementById('dashboardSection');
 
-    const positiveSummary = document.getElementById('positiveSummary');
-    const negativeSummary = document.getElementById('negativeSummary');
-    const prosList = document.getElementById('prosList');
-    const consList = document.getElementById('consList');
-    const modelsList = document.getElementById('modelsList');
-    const referenceList = document.getElementById('referenceList');
-    const compareChartArea = document.getElementById('compareChartArea');
+        const positiveSummary = document.getElementById('positiveSummary');
+        const negativeSummary = document.getElementById('negativeSummary');
+        const prosList = document.getElementById('prosList');
+        const consList = document.getElementById('consList');
+        const modelsList = document.getElementById('modelsList');
+        const referenceList = document.getElementById('referenceList');
+        const compareChartArea = document.getElementById('compareChartArea');
 
-    const heroKeyword = document.getElementById('heroKeyword');
-    const pageTitle = document.getElementById('pageTitle');
-    const currentKeyword = document.getElementById('currentKeyword');
-    const loadingKeyword = document.getElementById('loadingKeyword');
+        const heroKeyword = document.getElementById('heroKeyword');
+        const pageTitle = document.getElementById('pageTitle');
+        const currentKeyword = document.getElementById('currentKeyword');
+        const loadingKeyword = document.getElementById('loadingKeyword');
 
-    const heroStatus = document.getElementById('heroStatus');
-    const heroStatusText = document.getElementById('heroStatusText');
-    const jobStatus = document.getElementById('jobStatus');
+        const heroStatus = document.getElementById('heroStatus');
+        const heroStatusText = document.getElementById('heroStatusText');
+        const jobStatus = document.getElementById('jobStatus');
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const keyword = urlParams.get('keyword');
+        const urlParams = new URLSearchParams(window.location.search);
+        const keyword = urlParams.get('keyword');
 
-    if (!keyword) {
-        loadingSection.style.display = 'none';
-        dashboardSection.style.display = 'block';
-        positiveSummary.textContent = '내용 없음';
-        negativeSummary.textContent = '내용 없음';
-        if (compareChartArea) {
-            compareChartArea.innerHTML = `<div class="compare-chart-empty">비교 제품 데이터 없음</div>`;
-        }
-        return;
-    }
+        let pollTimer = null;
+        let pollCount = 0;
+        const MAX_POLL_COUNT = 120; // 2초 간격이면 최대 4분
 
-    keywordInput.value = keyword;
-    heroKeyword.textContent = keyword;
-    currentKeyword.textContent = keyword;
-    loadingKeyword.textContent = keyword;
-    pageTitle.innerHTML = `${escapeHtml(keyword)} 커뮤니티 분석 결과`;
-
-    resultSearchForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-        const newKeyword = keywordInput.value.trim();
-        if (!newKeyword) return;
-        window.location.href = `/analyze/result?keyword=${encodeURIComponent(newKeyword)}`;
-    });
-
-    function clean(text) {
-        if (text == null) return '';
-        if (typeof text !== 'string') return String(text);
-        return text.replace(/[#*]/g, '').trim();
-    }
-
-    function escapeHtml(text) {
-        return String(text)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    }
-
-    function renderPointList(target, items, emptyText) {
-        if (!Array.isArray(items) || items.length === 0) {
-            target.innerHTML = `<li>${escapeHtml(emptyText)}</li>`;
+        if (!keyword) {
+            setErrorState('결과 없음', '키워드가 없습니다.');
             return;
         }
 
-        target.innerHTML = items.map(item => {
-            const point = clean(item && item.point ? item.point : '');
-            return `<li>${escapeHtml(point)}</li>`;
-        }).join('');
-    }
+        keywordInput.value = keyword;
+        heroKeyword.textContent = keyword;
+        currentKeyword.textContent = keyword;
+        loadingKeyword.textContent = keyword;
+        pageTitle.innerHTML = `${escapeHtml(keyword)} 커뮤니티 분석 결과`;
 
-    function renderModelList(target, items, emptyText) {
-        if (!Array.isArray(items) || items.length === 0) {
-            target.innerHTML = `<li>${escapeHtml(emptyText)}</li>`;
-            return;
+        resultSearchForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const newKeyword = keywordInput.value.trim();
+            if (!newKeyword) return;
+            window.location.href = `/analyze/result?keyword=${encodeURIComponent(newKeyword)}`;
+        });
+
+        function clean(text) {
+            if (text == null) return '';
+            if (typeof text !== 'string') return String(text);
+            return text.replace(/[#*]/g, '').trim();
         }
 
-        target.innerHTML = items.map(item => {
-            const name = clean(item?.name || '');
-            const context = clean(item?.context || '');
-            const count = Number(item?.mentionCount || 0);
+        function escapeHtml(text) {
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
 
-            if (context) {
-                return `<li>${escapeHtml(name)} - ${escapeHtml(context)} (${count}회)</li>`;
+        function renderPointList(target, items, emptyText) {
+            if (!Array.isArray(items) || items.length === 0) {
+                target.innerHTML = `<li>${escapeHtml(emptyText)}</li>`;
+                return;
             }
-            return `<li>${escapeHtml(name)} (${count}회)</li>`;
-        }).join('');
-    }
 
-    function renderReferences(target, pros, cons) {
-        const merged = [
-            ...(Array.isArray(pros) ? pros.map(item => ({ ...item, type: '장점' })) : []),
-            ...(Array.isArray(cons) ? cons.map(item => ({ ...item, type: '단점' })) : [])
-        ];
-
-        const filtered = merged.filter(item =>
-            item &&
-            item.point &&
-            Array.isArray(item.sources) &&
-            item.sources.length > 0
-        );
-
-        if (filtered.length === 0) {
-            target.innerHTML = `
-                <div class="reference-item">
-                    <strong>근거 링크 없음</strong>
-                    <p>표시할 출처 링크가 없습니다.</p>
-                </div>
-            `;
-            return;
+            target.innerHTML = items.map(item => {
+                const point = clean(item && item.point ? item.point : '');
+                return `<li>${escapeHtml(point)}</li>`;
+            }).join('');
         }
 
-        target.innerHTML = filtered.map(item => {
-            const point = escapeHtml(clean(item.point || ''));
-            const type = escapeHtml(item.type || '');
+        function renderModelList(target, items, emptyText) {
+            if (!Array.isArray(items) || items.length === 0) {
+                target.innerHTML = `<li>${escapeHtml(emptyText)}</li>`;
+                return;
+            }
 
-            const links = item.sources
-                .filter(source => source && source.url)
-                .map(source => {
-                    const url = source.url;
-                    const safeUrl = escapeHtml(url);
-                    return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeUrl}</a>`;
-                })
-                .join('<br>');
+            target.innerHTML = items.map(item => {
+                const name = clean(item?.name || '');
+                const context = clean(item?.context || '');
+                const count = Number(item?.mentionCount || 0);
 
-            return `
-                <div class="reference-item">
-                    <strong>[${type}] ${point}</strong>
-                    <p>${links || '링크 없음'}</p>
-                </div>
-            `;
-        }).join('');
-    }
-
-    function renderComparisonChart(models) {
-        if (!compareChartArea) return;
-
-        if (!Array.isArray(models) || models.length === 0) {
-            compareChartArea.innerHTML = `<div class="compare-chart-empty">비교 제품 데이터 없음</div>`;
-            return;
+                if (context) {
+                    return `<li>${escapeHtml(name)} - ${escapeHtml(context)} (${count}회)</li>`;
+                }
+                return `<li>${escapeHtml(name)} (${count}회)</li>`;
+            }).join('');
         }
 
-        const sorted = [...models]
-            .filter(item => item && item.name)
-            .sort((a, b) => Number(b.mentionCount || 0) - Number(a.mentionCount || 0));
+        function renderReferences(target, pros, cons) {
+            const merged = [
+                ...(Array.isArray(pros) ? pros.map(item => ({ ...item, type: '장점' })) : []),
+                ...(Array.isArray(cons) ? cons.map(item => ({ ...item, type: '단점' })) : [])
+            ];
 
-        renderDonutComparison(sorted);
-    }
+            const filtered = merged.filter(item =>
+                item && item.point && Array.isArray(item.sources) && item.sources.length > 0
+            );
 
-    function renderDonutComparison(models) {
-        const colors = ['#7c3aed', '#8b5cf6', '#06b6d4', '#f59e0b', '#10b981', '#ef4444'];
-        const total = models.reduce((sum, item) => sum + Number(item.mentionCount || 0), 0);
-
-        if (total === 0) {
-            compareChartArea.innerHTML = `<div class="compare-chart-empty">비교 제품 데이터 없음</div>`;
-            return;
-        }
-
-        let currentDeg = 0;
-        const gradientParts = [];
-        const legendHtml = models.map((item, index) => {
-            const count = Number(item.mentionCount || 0);
-            const percent = Math.round((count / total) * 100);
-            const deg = (count / total) * 360;
-            const color = colors[index % colors.length];
-
-            gradientParts.push(`${color} ${currentDeg}deg ${currentDeg + deg}deg`);
-            currentDeg += deg;
-
-            return `
-                <div class="compare-legend-item">
-                    <div class="compare-legend-left">
-                        <span class="compare-color-dot" style="background:${color};"></span>
-                        <span class="compare-model-name">${escapeHtml(clean(item.name || ''))}</span>
+            if (filtered.length === 0) {
+                target.innerHTML = `
+                    <div class="reference-item">
+                        <strong>근거 링크 없음</strong>
+                        <p>표시할 출처 링크가 없습니다.</p>
                     </div>
-                    <strong class="compare-model-percent">${percent}%</strong>
-                </div>
-            `;
-        }).join('');
+                `;
+                return;
+            }
 
-        compareChartArea.innerHTML = `
-            <div class="compare-donut-layout">
-                <div class="compare-donut-wrap">
-                    <div class="compare-donut-chart" style="background: conic-gradient(${gradientParts.join(', ')});">
-                        <div class="compare-donut-center">
-                            <strong>100%</strong>
-                            <span>비교 언급 비중</span>
-                        </div>
+            target.innerHTML = filtered.map(item => {
+                const point = escapeHtml(clean(item.point || ''));
+                const type = escapeHtml(item.type || '');
+
+                const links = item.sources
+                    .filter(source => source && source.url)
+                    .map(source => {
+                        const safeUrl = escapeHtml(source.url);
+                        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeUrl}</a>`;
+                    })
+                    .join('<br>');
+
+                return `
+                    <div class="reference-item">
+                        <strong>[${type}] ${point}</strong>
+                        <p>${links || '링크 없음'}</p>
                     </div>
-                </div>
-                <div class="compare-legend-list">
-                    ${legendHtml}
-                </div>
-            </div>
-        `;
-    }
-
-    function setErrorState(title, desc) {
-        heroStatus.textContent = title;
-        heroStatusText.textContent = desc;
-        jobStatus.textContent = title;
-
-        loadingSection.style.display = 'none';
-        dashboardSection.style.display = 'block';
-
-        positiveSummary.textContent = '내용 없음';
-        negativeSummary.textContent = '내용 없음';
-
-        prosList.innerHTML = '<li>데이터 없음</li>';
-        consList.innerHTML = '<li>데이터 없음</li>';
-        modelsList.innerHTML = '<li>데이터 없음</li>';
-
-        if (compareChartArea) {
-            compareChartArea.innerHTML = `<div class="compare-chart-empty">비교 제품 데이터 없음</div>`;
+                `;
+            }).join('');
         }
 
-        if (referenceList) {
+        function renderComparisonChart(models) {
+            if (!compareChartArea) return;
+
+            if (!Array.isArray(models) || models.length === 0) {
+                compareChartArea.innerHTML = `<div class="compare-chart-empty">비교 제품 데이터 없음</div>`;
+                return;
+            }
+
+            const sorted = [...models]
+                .filter(item => item && item.name)
+                .sort((a, b) => Number(b.mentionCount || 0) - Number(a.mentionCount || 0));
+
+            compareChartArea.innerHTML = sorted.map(item => {
+                const count = Number(item.mentionCount || 0);
+                return `<div>${escapeHtml(item.name)} (${count}회)</div>`;
+            }).join('');
+        }
+
+        function setErrorState(title, message) {
+            if (pollTimer) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+            }
+
+            heroStatus.textContent = title;
+            heroStatusText.textContent = message;
+            jobStatus.textContent = title;
+
+            loadingSection.style.display = 'none';
+            dashboardSection.style.display = 'block';
+
+            positiveSummary.textContent = '내용 없음';
+            negativeSummary.textContent = '내용 없음';
+            prosList.innerHTML = '<li>데이터 없음</li>';
+            consList.innerHTML = '<li>데이터 없음</li>';
+            modelsList.innerHTML = '<li>데이터 없음</li>';
+            compareChartArea.innerHTML = `<div class="compare-chart-empty">비교 제품 데이터 없음</div>`;
             referenceList.innerHTML = `
                 <div class="reference-item">
                     <strong>근거 링크 없음</strong>
-                    <p>표시할 출처 링크가 없습니다.</p>
+                    <p>${escapeHtml(message)}</p>
                 </div>
             `;
         }
-    }
 
-    function fetchFinalResult(keyword) {
-        fetch(`/api/result-data?keyword=${encodeURIComponent(keyword)}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.error) {
-                    setErrorState('결과 없음', `결과를 불러오지 못했습니다. (${data.error})`);
-                    return;
-                }
+        function applyResult(data) {
+            if (pollTimer) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+            }
 
-                heroStatus.textContent = '완료';
-                heroStatusText.textContent = '리포트 로딩이 완료되었습니다.';
-                jobStatus.textContent = '완료';
+            heroStatus.textContent = '완료';
+            heroStatusText.textContent = '리포트 로딩이 완료되었습니다.';
+            jobStatus.textContent = '완료';
 
-                positiveSummary.textContent = clean(data.positiveSummary || '내용 없음');
-                negativeSummary.textContent = clean(data.negativeSummary || '내용 없음');
+            positiveSummary.textContent = clean(data.positiveSummary || '내용 없음');
+            negativeSummary.textContent = clean(data.negativeSummary || '내용 없음');
 
-                renderPointList(prosList, data.pros, '장점 데이터 없음');
-                renderPointList(consList, data.cons, '단점 데이터 없음');
-                renderModelList(modelsList, data.models, '언급된 모델 없음');
-                renderComparisonChart(data.models);
+            renderPointList(prosList, data.pros, '장점 데이터 없음');
+            renderPointList(consList, data.cons, '단점 데이터 없음');
+            renderModelList(modelsList, data.models, '언급된 모델 없음');
+            renderComparisonChart(data.models);
+            renderReferences(referenceList, data.pros, data.cons);
 
-                if (referenceList) {
-                    renderReferences(referenceList, data.pros, data.cons);
-                }
+            loadingSection.style.display = 'none';
+            dashboardSection.style.display = 'block';
+        }
 
-                loadingSection.style.display = 'none';
-                dashboardSection.style.display = 'block';
-            })
-            .catch(err => {
-                console.error(err);
-                setErrorState('오류', '결과 조회 중 오류가 발생했습니다.');
-            });
-    }
+        function pollResult() {
+            heroStatus.textContent = '분석 중';
+            heroStatusText.textContent = '커뮤니티 데이터를 수집하고 있습니다.';
+            jobStatus.textContent = '분석 중';
 
-    function checkStatus(keyword) {
-        heroStatus.textContent = '분석 중';
-        heroStatusText.textContent = '작업 큐 상태를 확인하고 있습니다.';
-        jobStatus.textContent = '분석 중';
-
-        const interval = setInterval(() => {
-            fetch(`/api/crawl/status?keyword=${encodeURIComponent(keyword)}`)
+            fetch(`/api/result-data?keyword=${encodeURIComponent(keyword)}`)
                 .then(res => res.json())
                 .then(data => {
-                    if (data.status === 'DONE' || data.status === 'SKIPPED') {
-                        clearInterval(interval);
-                        fetchFinalResult(keyword);
-                    } else if (data.status === 'FAILED') {
-                        clearInterval(interval);
-                        setErrorState('실패', '분석 작업이 실패했습니다.');
-                    } else {
-                        heroStatus.textContent = '분석 중';
-                        heroStatusText.textContent = '커뮤니티 데이터를 수집 중입니다.';
-                        jobStatus.textContent = '분석 중';
+                    if (!data.error) {
+                        applyResult(data);
+                        return;
                     }
+
+                    if (data.error === 'NOT_READY') {
+                        pollCount += 1;
+
+                        heroStatus.textContent = '분석 중';
+                        heroStatusText.textContent = `리포트 생성 대기 중입니다. (${pollCount})`;
+                        jobStatus.textContent = '분석 중';
+
+                        if (pollCount >= MAX_POLL_COUNT) {
+                            setErrorState('지연', '분석이 오래 걸리고 있습니다. 잠시 후 다시 확인해주세요.');
+                        }
+                        return;
+                    }
+
+                    if (data.error === 'NO_REPORT') {
+                        setErrorState('결과 없음', '아직 생성된 리포트가 없습니다.');
+                        return;
+                    }
+
+                    if (data.error === 'EMPTY_REPORT') {
+                        setErrorState('빈 리포트', '리포트 내용이 비어 있습니다.');
+                        return;
+                    }
+
+                    setErrorState('오류', `결과를 불러오지 못했습니다. (${data.error})`);
                 })
                 .catch(err => {
-                    clearInterval(interval);
                     console.error(err);
-                    setErrorState('오류', '상태 확인 중 오류가 발생했습니다.');
+                    setErrorState('오류', '결과 조회 중 오류가 발생했습니다.');
                 });
-        }, 2000);
-    }
+        }
 
-    checkStatus(keyword);
-});
+        pollResult();
+        pollTimer = setInterval(pollResult, 2000);
+
+        window.addEventListener('beforeunload', function () {
+            if (pollTimer) {
+                clearInterval(pollTimer);
+            }
+        });
+    });
 </script>
 </body>
 </html>
