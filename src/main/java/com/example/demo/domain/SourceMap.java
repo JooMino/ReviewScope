@@ -22,7 +22,7 @@ public class SourceMap {
     @Column(name = "hash_value", nullable = false, length = 255)
     private String hashValue;
 
-    @Column(nullable = false, length = 1000)
+    @Column(nullable = false,columnDefinition = "TEXT")
     private String url;
 
     @Column(nullable = false)
