@@ -11,6 +11,7 @@ import com.example.demo.repository.SourceMapRepository;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,6 +38,8 @@ public class CrawlApiController {
     public ResponseEntity<?> next() {
         CrawlJob job = crawlQueue.poll();
         if (job == null) return ResponseEntity.noContent().build();
+
+        job.setStatus(CrawlJob.Status.RUNNING);
         return ResponseEntity.ok(job);
     }
 
@@ -108,15 +111,27 @@ public class CrawlApiController {
 
         for (SourceItem item : request.getItems()) {
             if (item == null) continue;
-            if (item.getHash() == null || item.getHash().trim().isEmpty()) continue;
-            if (item.getUrl() == null || item.getUrl().trim().isEmpty()) continue;
 
-            SourceMap entity = new SourceMap();
-            entity.setKeyword(keyword);
-            entity.setHashValue(item.getHash().trim());
-            entity.setUrl(item.getUrl().trim());
+            String hash = item.getHash() == null ? null : item.getHash().trim();
+            String url = item.getUrl() == null ? null : item.getUrl().trim();
 
-            sourceMapRepository.save(entity);
+            if (hash == null || hash.isEmpty()) continue;
+            if (url == null || url.isEmpty()) continue;
+
+            Optional<SourceMap> existing =
+                    sourceMapRepository.findTopByKeywordAndHashValueOrderByCreatedAtDesc(keyword, hash);
+
+            if (existing.isPresent()) {
+                SourceMap sourceMap = existing.get();
+                sourceMap.setUrl(url);
+                sourceMapRepository.save(sourceMap);
+            } else {
+                SourceMap entity = new SourceMap();
+                entity.setKeyword(keyword);
+                entity.setHashValue(hash);
+                entity.setUrl(url);
+                sourceMapRepository.save(entity);
+            }
         }
 
         return "SOURCE_MAP_SAVED";

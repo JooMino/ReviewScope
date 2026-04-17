@@ -1,22 +1,20 @@
 package com.example.demo.crawl;
 
-
-
 public class CrawlJob {
     private String keyword;
     private String[] sites;
- 
+
     public enum Status {
-        PENDING, RUNNING, DONE,FAILED , SKIPPED
+        PENDING, RUNNING, DONE, FAILED, SKIPPED
     }
 
-    private Status status = Status.RUNNING; 
+    private Status status = Status.PENDING;
 
     public CrawlJob(String keyword, String[] sites) {
         this.keyword = keyword;
         this.sites = sites;
-        this.status = Status.PENDING;
     }
+
     public String getKeyword() {
         return keyword;
     }
@@ -32,5 +30,4 @@ public class CrawlJob {
     public String[] getSites() {
         return sites;
     }
-
 }
