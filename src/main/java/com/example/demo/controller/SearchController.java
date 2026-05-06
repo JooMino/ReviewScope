@@ -174,7 +174,7 @@ public class SearchController {
             result.put("pros", pros);
             result.put("cons", cons);
             result.put("models", models);
-            result.put("monthlyCounts",monthlyCounts);
+            result.put("monthly_counts",monthlyCounts);
             return result;
 
         } catch (Exception e) {
