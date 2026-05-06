@@ -226,9 +226,25 @@
 
         resultSearchForm.addEventListener('submit', function (e) {
             e.preventDefault();
+
             const newKeyword = keywordInput.value.trim();
             if (!newKeyword) return;
-            window.location.href = `/analyze/result?keyword=${encodeURIComponent(newKeyword)}`;
+
+            fetch('/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `keyword=${encodeURIComponent(newKeyword)}`
+            })
+            .then(res => res.json())
+            .then(() => {
+                window.location.href = `/analyze/result?keyword=${encodeURIComponent(newKeyword)}`;
+            })
+            .catch(err => {
+                console.error(err);
+                alert('분석 요청 중 오류가 발생했습니다.');
+            });
         });
 
         function clean(text) {
