@@ -157,6 +157,16 @@ public class SearchController {
                 models.add(modelItem);
             }
 
+            JsonNode monthlyNode = root.path("monthly_counts");
+
+            Map<String, Integer> monthlyCounts = new LinkedHashMap<>();
+
+            if (monthlyNode.isObject()) {
+                monthlyNode.fields().forEachRemaining(entry -> {
+                    monthlyCounts.put(entry.getKey(), entry.getValue().asInt());
+                });
+            }
+
             Map<String, Object> result = new HashMap<>();
             result.put("summary", summary);
             result.put("positiveSummary", positiveSummary);
@@ -164,7 +174,7 @@ public class SearchController {
             result.put("pros", pros);
             result.put("cons", cons);
             result.put("models", models);
-
+            result.put("monthlyCounts",monthlyCounts);
             return result;
 
         } catch (Exception e) {

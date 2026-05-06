@@ -168,14 +168,12 @@
 
             <section class="section-card dashboard-card">
                 <div class="dashboard-card-header">
-                    <h2>시간에 따른 평가 변화</h2>
-                    <span class="card-badge">예시 UI</span>
+                    <h2>월별 언급량 변화</h2>
+                    <span class="card-badge">월 단위</span>
                 </div>
-                <div class="timeline-chart">
-                    <div class="timeline-bar"><div class="timeline-fill h35"></div><span>1주차</span></div>
-                    <div class="timeline-bar"><div class="timeline-fill h55"></div><span>2주차</span></div>
-                    <div class="timeline-bar"><div class="timeline-fill h48"></div><span>3주차</span></div>
-                    <div class="timeline-bar"><div class="timeline-fill h62"></div><span>4주차</span></div>
+
+                <div class="line-chart-wrap">
+                    <canvas id="mentionLineChart"></canvas>
                 </div>
             </section>
         </div>
@@ -197,6 +195,7 @@
         const modelsList = document.getElementById('modelsList');
         const referenceList = document.getElementById('referenceList');
         const compareChartArea = document.getElementById('compareChartArea');
+        const mentionLineChart = document.getElementById('mentionLineChart');
 
         const heroKeyword = document.getElementById('heroKeyword');
         const pageTitle = document.getElementById('pageTitle');
@@ -384,7 +383,117 @@
                 </div>
             `;
         }
+        function renderMentionLineChart(monthlyCounts) {
+            if (!mentionLineChart) return;
 
+            const ctx = mentionLineChart.getContext('2d');
+
+            if (!monthlyCounts || Object.keys(monthlyCounts).length === 0) {
+                ctx.clearRect(0, 0, mentionLineChart.width, mentionLineChart.height);
+                return;
+            }
+
+            const entries = Object.entries(monthlyCounts)
+                .sort(([a], [b]) => a.localeCompare(b));
+
+            const labels = entries.map(([month]) => month);
+            const values = entries.map(([_, count]) => Number(count || 0));
+
+            const dpr = window.devicePixelRatio || 1;
+            const width = mentionLineChart.clientWidth;
+            const height = mentionLineChart.clientHeight;
+
+            mentionLineChart.width = width * dpr;
+            mentionLineChart.height = height * dpr;
+            ctx.scale(dpr, dpr);
+
+            ctx.clearRect(0, 0, width, height);
+
+            const padding = {
+                top: 24,
+                right: 24,
+                bottom: 42,
+                left: 48
+            };
+
+            const chartW = width - padding.left - padding.right;
+            const chartH = height - padding.top - padding.bottom;
+
+            const maxValue = Math.max(...values, 1);
+            const stepX = labels.length > 1 ? chartW / (labels.length - 1) : chartW;
+
+            const points = values.map((value, index) => {
+                const x = padding.left + index * stepX;
+                const y = padding.top + chartH - (value / maxValue) * chartH;
+                return { x, y, value, label: labels[index] };
+            });
+
+            // grid
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const y = padding.top + (chartH / 4) * i;
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(width - padding.right, y);
+                ctx.stroke();
+            }
+
+            // line
+            ctx.strokeStyle = '#00E0C6';
+            ctx.lineWidth = 3;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+
+            ctx.beginPath();
+            points.forEach((p, i) => {
+                if (i === 0) ctx.moveTo(p.x, p.y);
+                else ctx.lineTo(p.x, p.y);
+            });
+            ctx.stroke();
+
+            // area fill
+            const gradient = ctx.createLinearGradient(0, padding.top, 0, height - padding.bottom);
+            gradient.addColorStop(0, 'rgba(0, 224, 198, 0.25)');
+            gradient.addColorStop(1, 'rgba(0, 224, 198, 0)');
+
+            ctx.lineTo(points[points.length - 1].x, height - padding.bottom);
+            ctx.lineTo(points[0].x, height - padding.bottom);
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // points
+            points.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+                ctx.fillStyle = '#00E0C6';
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 9, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(0, 224, 198, 0.35)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+
+            // labels
+            ctx.fillStyle = '#A0A0A0';
+            ctx.font = '12px Noto Sans KR';
+            ctx.textAlign = 'center';
+
+            labels.forEach((label, index) => {
+                const p = points[index];
+                ctx.fillText(label.slice(5), p.x, height - 16);
+            });
+
+            // values
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '12px Noto Sans KR';
+            points.forEach(p => {
+                ctx.fillText(`${p.value}건`, p.x, p.y - 12);
+            });
+        }
         function setErrorState(title, message) {
             if (pollTimer) {
                 clearInterval(pollTimer);
@@ -430,6 +539,7 @@
             renderModelList(modelsList, data.models, '언급된 모델 없음');
             renderComparisonChart(data.models);
             renderReferences(referenceList, data.pros, data.cons);
+            renderMentionLineChart(data.monthly_counts);
 
             loadingSection.style.display = 'none';
             dashboardSection.style.display = 'block';
