@@ -539,10 +539,13 @@
             renderModelList(modelsList, data.models, '언급된 모델 없음');
             renderComparisonChart(data.models);
             renderReferences(referenceList, data.pros, data.cons);
-            renderMentionLineChart(data.monthly_counts);
 
             loadingSection.style.display = 'none';
             dashboardSection.style.display = 'block';
+
+            setTimeout(() => {
+                renderMentionLineChart(data.monthly_counts);
+            }, 100);
         }
 
         function pollResult() {
