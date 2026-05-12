@@ -9,7 +9,7 @@ import com.example.demo.domain.CrawlReport;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
-
+import java.util.List;
 @Repository
 public interface CrawlReportRepository extends JpaRepository<CrawlReport, String> {
     Optional<CrawlReport> findByKeyword(String keyword);
@@ -29,4 +29,14 @@ public interface CrawlReportRepository extends JpaRepository<CrawlReport, String
     	        @Param("keyword") String keyword,
     	        @Param("sevenDaysAgo") LocalDateTime sevenDaysAgo
     	);
+	@Query("""
+    SELECT r.keyword
+    FROM CrawlReport r
+    WHERE LOWER(r.keyword) LIKE LOWER(CONCAT('%', :q, '%'))
+      AND r.status = com.example.demo.crawl.CrawlJob$Status.DONE
+      AND r.reportContent IS NOT NULL
+      AND LENGTH(TRIM(r.reportContent)) > 0
+    ORDER BY r.createdAt DESC
+""")
+	List<String> searchReportKeywords(@Param("q") String q);
 }

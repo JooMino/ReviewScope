@@ -58,17 +58,37 @@ public class SearchController {
         model.addAttribute("keyword", keyword);
         return "analy-result";
     }
-
+    //DB에 있는지 검색
     @PostMapping("/search")
     @ResponseBody
-    public Map<String, String> search(@RequestParam("keyword") String keyword) {
-        crawlQueue.clearQueue();
+    public Map<String, Object> search(@RequestParam("keyword") String keyword) {
+        String q = keyword.trim();
+
+        List<String> candidates = crawlReportRepository.searchReportKeywords(q)
+                .stream()
+                .distinct()
+                .limit(10)
+                .toList();
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("input", q);
+        result.put("candidates", candidates);
+        result.put("hasCandidates", !candidates.isEmpty());
+
+        return result;
+    }
+    // 크롤링 돌리는 검색
+    @PostMapping("/search/precise")
+    @ResponseBody
+    public Map<String, String> preciseSearch(@RequestParam("keyword") String keyword) {
+        String q = keyword.trim();
 
         String[] sites = new String[]{"dc", "clien", "fmk", "quasar"};
-        crawlQueue.add(keyword, sites);
+
+        crawlQueue.add(q, sites);
 
         return Map.of(
-                "keyword", keyword,
+                "keyword", q,
                 "status", "START"
         );
     }
