@@ -1,622 +1,809 @@
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <title>ReviewScope - 분석 결과</title>
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/result.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="result.css">
 </head>
-<body>
+<body class="result-page">
 <div class="left-sidebar">
     <div class="brand">
-        Review<span>Scope</span>
+        <strong>Review <span>Scope</span></strong>
+        <p>COMMUNITY ANALYTICS</p>
     </div>
+
     <ul class="menu-list">
         <li><a class="menu-item" th:href="@{/}">홈</a></li>
         <li><a class="menu-item active" th:href="@{/analyze}">분석</a></li>
-        <li><a class="menu-item">분석 기록</a></li>
         <li><a class="menu-item">설정</a></li>
     </ul>
 </div>
 
 <div class="main-container analyze-result-layout">
-    <aside class="result-sidebar">
-        <section class="section-card result-search-card">
-            <div class="result-search-label">다른 키워드 분석</div>
-            <form id="resultSearchForm" class="result-search-form">
+    <main class="result-main">
+        <header class="result-header">
+            <div>
+                <p class="result-kicker">Community Analytics</p>
+                <h1 id="pageTitle">
+                    <span th:text="${keyword}">로지텍 G304</span> 분석 결과
+                </h1>
+                <p class="result-desc">
+                    커뮤니티 게시글 기반으로 언급량 추이, 함께 언급된 제품, 장단점 근거를 정리합니다.
+                </p>
+            </div>
+
+            <form id="resultSearchForm" class="header-search-form">
                 <input
                     type="text"
                     id="keywordInput"
                     name="keyword"
-                    placeholder="제품명 또는 키워드 입력"
+                    placeholder="다른 제품 검색"
                     th:value="${keyword}"
                     required
                 >
-                <button type="submit" class="btn-submit"id ="startBtn">다시 분석</button>
+                <button type="submit" class="btn-submit" id="startBtn">분석</button>
             </form>
-            <p class="tip">예: 로지텍 G304, WH-1000XM5</p>
-        </section>
-
-        <section class="section-card result-filter-card">
-            <h3 class="filter-title">분석 조건</h3>
-
-            <div class="filter-group">
-                <label class="filter-label">키워드</label>
-                <div class="filter-value" id="currentKeyword" th:text="${keyword}">로지텍 G304</div>
-            </div>
-
-            <div class="filter-group">
-                <label class="filter-label">사이트</label>
-                <div class="site-check-list">
-                    <label class="site-check"><input type="checkbox" checked disabled> DC</label>
-                    <label class="site-check"><input type="checkbox" checked disabled> 클리앙</label>
-                    <label class="site-check"><input type="checkbox" checked disabled> 펨코</label>
-                    <label class="site-check"><input type="checkbox" checked disabled> 퀘이사존</label>
-                </div>
-            </div>
-        </section>
-
-        <section class="section-card result-summary-mini">
-            <div class="mini-stat">
-                <span class="mini-stat-label">분석 상태</span>
-                <strong class="mini-stat-value" id="jobStatus">분석 중</strong>
-            </div>
-            <div class="mini-stat">
-                <span class="mini-stat-label">데이터 소스</span>
-                <strong class="mini-stat-value">4개 커뮤니티</strong>
-            </div>
-        </section>
-    </aside>
-
-    <main class="result-main">
-        <header class="result-page-header">
-            <div>
-                <p class="result-page-path">분석 / 결과</p>
-                <h1 id="pageTitle">
-                    <span th:text="${keyword}">로지텍 G304</span> 커뮤니티 분석 결과
-                </h1>
-                <p class="result-page-desc">
-                    커뮤니티 게시글 기반으로 장점, 단점, 주요 이슈, 함께 언급된 제품을 정리합니다.
-                </p>
-            </div>
         </header>
 
-        <section class="result-hero-grid">
-            <div class="section-card hero-keyword-card">
-                <div class="hero-card-label">분석 키워드</div>
-                <div class="hero-keyword" id="heroKeyword" th:text="${keyword}">로지텍 G304</div>
-                <p class="hero-subtext">JSON 리포트 기반 핵심 결과를 요약해서 보여줍니다.</p>
-            </div>
+        <section class="summary-strip">
+            <article class="summary-item primary">
+                <span class="summary-label">총 언급량</span>
+                <strong class="summary-value" id="totalMentionCount">-</strong>
+                <span class="summary-caption">월별 수집 데이터 기준</span>
+            </article>
 
-            <div class="section-card hero-status-card">
-                <div class="dashboard-card-header hero-status-header">
-                    <div>
-                        <div class="hero-card-label">진행 상태</div>
-                        <div class="hero-status" id="heroStatus">대기 중</div>
-                    </div>
-                    <span class="card-badge">리포트 상태</span>
-                </div>
-                <p class="hero-subtext" id="heroStatusText">작업 큐와 DB 상태를 확인하고 있습니다.</p>
-            </div>
+            <article class="summary-item">
+                <span class="summary-label">분석 상태</span>
+                <strong class="summary-value small" id="jobStatus">분석 중</strong>
+                <span class="summary-caption" id="heroStatusText">리포트를 확인하고 있습니다</span>
+            </article>
+
+            <article class="summary-item">
+                <span class="summary-label">함께 언급된 제품</span>
+                <strong class="summary-value" id="relatedModelCount">-</strong>
+                <span class="summary-caption">TOP 5 비교 제품</span>
+            </article>
         </section>
 
-        <div id="loadingSection" class="section-card dashboard-loading-card">
-            <div class="loading-container">
-                <p><strong id="loadingKeyword" th:text="${keyword}">로지텍 G304</strong> 분석 중...</p>
-                <div class="spinner"></div>
-                <p class="tip">커뮤니티 데이터를 수집하고 리포트를 생성하고 있습니다.</p>
+        <div id="loadingSection" class="loading-card">
+            <div class="spinner"></div>
+            <div>
+                <strong><span id="loadingKeyword" th:text="${keyword}">로지텍 G304</span> 분석 중...</strong>
+                <p>데이터를 수집하고 리포트를 생성하고 있습니다.</p>
             </div>
         </div>
 
         <div id="dashboardSection" class="dashboard-section" style="display:none;">
-            <section class="dashboard-grid compare-grid">
-                <article class="section-card dashboard-card">
-                    <div class="dashboard-card-header">
-                        <h2>함께 언급된 모델</h2>
+            <section class="analytics-grid">
+                <article class="main-chart-card">
+                    <div class="chart-card-top">
+                        <div>
+                            <h2 id="chartTitle">언급량 추이</h2>
+                            <p id="chartSub">월별 커뮤니티 언급량 변화를 확인합니다.</p>
+                        </div>
+
+                        <div class="chart-tabs" role="tablist">
+                            <button type="button" class="chart-tab active" data-chart="trend">언급량 추이</button>
+                            <button type="button" class="chart-tab" data-chart="site">사이트별</button>
+                            <button type="button" class="chart-tab" data-chart="model">비교 제품</button>
+                        </div>
                     </div>
-                    <ul class="simple-list" id="modelsList">
-                        <li>불러오는 중...</li>
-                    </ul>
+
+                    <div class="chart-panel active" id="trendChartPanel">
+                        <div class="line-chart-wrap">
+                            <canvas id="mentionLineChart"></canvas>
+                        </div>
+                        <div class="empty-state" id="trendEmptyState" style="display:none;">
+                            <div class="empty-icon">📈</div>
+                            <strong>언급량 데이터가 없습니다</strong>
+                            <p>분석이 완료되면 월별 그래프가 표시됩니다.</p>
+                        </div>
+                    </div>
+
+                    <div class="chart-panel" id="siteChartPanel">
+                        <div id="siteMentionArea" class="site-mention-area">
+                            <div class="empty-state">
+                                <div class="empty-icon">📊</div>
+                                <strong>사이트별 데이터가 없습니다</strong>
+                                <p>사이트별 집계 값이 들어오면 막대 그래프로 표시됩니다.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-panel" id="modelChartPanel">
+                        <div id="compareChartArea" class="compare-chart-area">
+                            <div class="empty-state">
+                                <div class="empty-icon">🥧</div>
+                                <strong>비교 제품 데이터가 없습니다</strong>
+                                <p>함께 언급된 제품이 있으면 원형 그래프로 표시됩니다.</p>
+                            </div>
+                        </div>
+                    </div>
                 </article>
 
-                <article class="section-card dashboard-card">
-                    <div class="dashboard-card-header">
-                        <h2> 비교 제품 언급량</h2>
-                        <span class="card-badge">실제 언급 수 기준</span>
-                    </div>
-                    <div id="compareChartArea" class="compare-chart-area">
-                        <div class="compare-chart-empty">불러오는 중...</div>
-                    </div>
-                </article>
+                <aside class="right-insight-panel">
+                    <article class="side-widget">
+                        <div class="side-widget-head">
+                            <span>사이트별 언급량</span>
+                            <strong>커뮤니티</strong>
+                        </div>
+                        <div id="siteMiniArea" class="mini-empty">
+                            <span>📊</span>
+                            <p>데이터 없음</p>
+                        </div>
+                    </article>
+
+                    <article class="side-widget">
+                        <div class="side-widget-head">
+                            <span>함께 언급된 제품</span>
+                            <strong>TOP 5</strong>
+                        </div>
+                        <div id="modelMiniArea" class="mini-empty">
+                            <span>🥧</span>
+                            <p>데이터 없음</p>
+                        </div>
+                    </article>
+                </aside>
             </section>
 
-            <section class="dashboard-grid sentiment-grid">
-                <article class="section-card dashboard-card pros-card">
-                    <div class="dashboard-card-header">
-                        <h2> 장점 요약</h2>
+            <section class="insight-grid">
+                <article class="insight-card positive-card">
+                    <div class="card-title-row">
+                        <div>
+                            <span class="card-eyebrow">Positive</span>
+                            <h2>장점 요약</h2>
+                        </div>
                     </div>
                     <p class="sentiment-summary" id="positiveSummary">불러오는 중...</p>
-                    <ul class="bullet-list" id="prosList">
+                    <ul class="point-list" id="prosList">
                         <li>불러오는 중...</li>
                     </ul>
                 </article>
 
-                <article class="section-card dashboard-card cons-card">
-                    <div class="dashboard-card-header">
-                        <h2> 단점 요약</h2>
+                <article class="insight-card negative-card">
+                    <div class="card-title-row">
+                        <div>
+                            <span class="card-eyebrow">Negative</span>
+                            <h2>단점 요약</h2>
+                        </div>
                     </div>
                     <p class="sentiment-summary" id="negativeSummary">불러오는 중...</p>
-                    <ul class="bullet-list" id="consList">
+                    <ul class="point-list" id="consList">
                         <li>불러오는 중...</li>
                     </ul>
                 </article>
             </section>
 
-            <section class="section-card dashboard-card">
-                <div class="dashboard-card-header">
-                    <h2>🔗 장단점 근거 링크</h2>
-                    <span class="card-badge">예시 UI</span>
+            <section class="reference-card">
+                <div class="card-title-row">
+                    <div>
+                        <span class="card-eyebrow">Evidence</span>
+                        <h2>장단점 근거 링크</h2>
+                    </div>
                 </div>
+
                 <div class="reference-list" id="referenceList">
-                    <div class="reference-item">
+                    <div class="reference-item empty-reference">
                         <strong>불러오는 중...</strong>
                         <p>근거 링크를 준비하고 있습니다.</p>
                     </div>
                 </div>
             </section>
 
-            <section class="section-card dashboard-card">
-                <div class="dashboard-card-header">
-                    <h2>월별 언급량 변화</h2>
-                    <span class="card-badge">월 단위</span>
-                </div>
-
-                <div class="line-chart-wrap">
-                    <canvas id="mentionLineChart"></canvas>
-                </div>
-            </section>
+            <ul id="modelsList" style="display:none;"></ul>
         </div>
     </main>
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const keywordInput = document.getElementById('keywordInput');
-        const resultSearchForm = document.getElementById('resultSearchForm');
-
-        const loadingSection = document.getElementById('loadingSection');
-        const dashboardSection = document.getElementById('dashboardSection');
-
-        const positiveSummary = document.getElementById('positiveSummary');
-        const negativeSummary = document.getElementById('negativeSummary');
-        const prosList = document.getElementById('prosList');
-        const consList = document.getElementById('consList');
-        const modelsList = document.getElementById('modelsList');
-        const referenceList = document.getElementById('referenceList');
-        const compareChartArea = document.getElementById('compareChartArea');
-        const mentionLineChart = document.getElementById('mentionLineChart');
-
-        const heroKeyword = document.getElementById('heroKeyword');
-        const pageTitle = document.getElementById('pageTitle');
-        const currentKeyword = document.getElementById('currentKeyword');
-        const loadingKeyword = document.getElementById('loadingKeyword');
-
-        const heroStatus = document.getElementById('heroStatus');
-        const heroStatusText = document.getElementById('heroStatusText');
-        const jobStatus = document.getElementById('jobStatus');
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const keyword = urlParams.get('keyword');
-
-        let pollTimer = null;
-        let pollCount = 0;
-        const MAX_POLL_COUNT = 120; // 2초 간격이면 최대 4분
-
-        if (!keyword) {
-            setErrorState('결과 없음', '키워드가 없습니다.');
-            return;
-        }
-
-        keywordInput.value = keyword;
-        heroKeyword.textContent = keyword;
-        currentKeyword.textContent = keyword;
-        loadingKeyword.textContent = keyword;
-        pageTitle.innerHTML = `${escapeHtml(keyword)} 커뮤니티 분석 결과`;
-
-        resultSearchForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            const newKeyword = keywordInput.value.trim();
-            if (!newKeyword) return;
-
-            fetch('/search', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: `keyword=${encodeURIComponent(newKeyword)}`
-            })
-            .then(res => res.json())
-            .then(() => {
-                window.location.href = `/analyze/result?keyword=${encodeURIComponent(newKeyword)}`;
-            })
-            .catch(err => {
-                console.error(err);
-                alert('분석 요청 중 오류가 발생했습니다.');
-            });
-        });
-
-        function clean(text) {
-            if (text == null) return '';
-            if (typeof text !== 'string') return String(text);
-            return text.replace(/[#*]/g, '').trim();
-        }
-
-        function escapeHtml(text) {
-            return String(text)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        function renderPointList(target, items, emptyText) {
-            if (!Array.isArray(items) || items.length === 0) {
-                target.innerHTML = `<li>${escapeHtml(emptyText)}</li>`;
-                return;
-            }
-
-            target.innerHTML = items.map(item => {
-                const point = clean(item && item.point ? item.point : '');
-                return `<li>${escapeHtml(point)}</li>`;
-            }).join('');
-        }
-
-        function renderModelList(target, items, emptyText) {
-            if (!Array.isArray(items) || items.length === 0) {
-                target.innerHTML = `<li>${escapeHtml(emptyText)}</li>`;
-                return;
-            }
-
-            target.innerHTML = items.map(item => {
-                const name = clean(item?.name || '');
-                const context = clean(item?.context || '');
-                const count = Number(item?.mentionCount || 0);
-
-                if (context) {
-                    return `<li>${escapeHtml(name)} - ${escapeHtml(context)} (${count}회)</li>`;
-                }
-                return `<li>${escapeHtml(name)} (${count}회)</li>`;
-            }).join('');
-        }
-
-        function renderReferences(target, pros, cons) {
-            const merged = [
-                ...(Array.isArray(pros) ? pros.map(item => ({ ...item, type: '장점' })) : []),
-                ...(Array.isArray(cons) ? cons.map(item => ({ ...item, type: '단점' })) : [])
-            ];
-
-            const filtered = merged.filter(item =>
-                item && item.point && Array.isArray(item.sources) && item.sources.length > 0
-            );
-
-            if (filtered.length === 0) {
-                target.innerHTML = `
-                    <div class="reference-item">
-                        <strong>근거 링크 없음</strong>
-                        <p>표시할 출처 링크가 없습니다.</p>
-                    </div>
-                `;
-                return;
-            }
-
-            target.innerHTML = filtered.map(item => {
-                const point = escapeHtml(clean(item.point || ''));
-                const type = escapeHtml(item.type || '');
-
-                const links = item.sources
-                    .filter(source => source && source.url)
-                    .map(source => {
-                        const safeUrl = escapeHtml(source.url);
-                        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeUrl}</a>`;
-                    })
-                    .join('<br>');
-
-                return `
-                    <div class="reference-item">
-                        <strong>[${type}] ${point}</strong>
-                        <p>${links || '링크 없음'}</p>
-                    </div>
-                `;
-            }).join('');
-        }
-        let compareChartInstance = null;
-
-        function renderComparisonChart(models) {
-            if (!compareChartArea) return;
-
-            if (!Array.isArray(models) || models.length === 0) {
-                compareChartArea.innerHTML = `<div class="compare-chart-empty">비교 제품 데이터 없음</div>`;
-                return;
-            }
-
-            const sorted = [...models]
-                .filter(item => item && item.name)
-                .sort((a, b) => Number(b.mentionCount || 0) - Number(a.mentionCount || 0))
-                .slice(0, 5);
-
-            const total = sorted.reduce((sum, item) => sum + Number(item.mentionCount || 0), 0);
-
-            if (total === 0) {
-                compareChartArea.innerHTML = `<div class="compare-chart-empty">비교 제품 데이터 없음</div>`;
-                return;
-            }
-
-            const colors = ['#8b5cf6', '#22d3ee', '#34d399', '#f59e0b', '#f87171'];
-
-            let currentPercent = 0;
-            const gradientParts = sorted.map((item, index) => {
-                const value = Number(item.mentionCount || 0);
-                const percent = (value / total) * 100;
-                const start = currentPercent;
-                const end = currentPercent + percent;
-                currentPercent = end;
-                return `${colors[index]} ${start}% ${end}%`;
-            });
-
-            const topItem = sorted[0];
-            const topPercent = ((Number(topItem.mentionCount || 0) / total) * 100).toFixed(1);
-
-            compareChartArea.innerHTML = `
-                <div class="compare-donut-layout">
-                    <div class="compare-donut-wrap">
-                        <div class="compare-donut-chart" style="background: conic-gradient(${gradientParts.join(', ')});">
-                            <div class="compare-donut-center">
-                                <strong>${topPercent}%</strong>
-                                <span>TOP<br>${escapeHtml(topItem.name)}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="compare-legend-list">
-                        ${sorted.map((item, index) => {
-                            const count = Number(item.mentionCount || 0);
-                            const percent = ((count / total) * 100).toFixed(1);
-
-                            return `
-                                <div class="compare-legend-item">
-                                    <div class="compare-legend-left">
-                                        <span class="compare-color-dot" style="background:${colors[index]}"></span>
-                                        <span class="compare-model-name">${escapeHtml(item.name)}</span>
-                                    </div>
-                                    <span class="compare-model-percent">${count}회 · ${percent}%</span>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-            `;
-        }
-        function renderMentionLineChart(monthlyCounts) {
-            if (!mentionLineChart) return;
-
-            const ctx = mentionLineChart.getContext('2d');
-
-            if (!monthlyCounts || Object.keys(monthlyCounts).length === 0) {
-                ctx.clearRect(0, 0, mentionLineChart.width, mentionLineChart.height);
-                return;
-            }
-
-            const entries = Object.entries(monthlyCounts)
-                .sort(([a], [b]) => a.localeCompare(b));
-
-            const labels = entries.map(([month]) => month);
-            const values = entries.map(([_, count]) => Number(count || 0));
-
-            const dpr = window.devicePixelRatio || 1;
-            const width = mentionLineChart.clientWidth;
-            const height = mentionLineChart.clientHeight;
-
-            mentionLineChart.width = width * dpr;
-            mentionLineChart.height = height * dpr;
-            ctx.scale(dpr, dpr);
-
-            ctx.clearRect(0, 0, width, height);
-
-            const padding = {
-                top: 24,
-                right: 24,
-                bottom: 42,
-                left: 48
-            };
-
-            const chartW = width - padding.left - padding.right;
-            const chartH = height - padding.top - padding.bottom;
-
-            const maxValue = Math.max(...values, 1);
-            const stepX = labels.length > 1 ? chartW / (labels.length - 1) : chartW;
-
-            const points = values.map((value, index) => {
-                const x = padding.left + index * stepX;
-                const y = padding.top + chartH - (value / maxValue) * chartH;
-                return { x, y, value, label: labels[index] };
-            });
-
-            // grid
-            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-            ctx.lineWidth = 1;
-            for (let i = 0; i <= 4; i++) {
-                const y = padding.top + (chartH / 4) * i;
-                ctx.beginPath();
-                ctx.moveTo(padding.left, y);
-                ctx.lineTo(width - padding.right, y);
-                ctx.stroke();
-            }
-
-            // line
-            ctx.strokeStyle = '#00E0C6';
-            ctx.lineWidth = 3;
-            ctx.lineJoin = 'round';
-            ctx.lineCap = 'round';
-
-            ctx.beginPath();
-            points.forEach((p, i) => {
-                if (i === 0) ctx.moveTo(p.x, p.y);
-                else ctx.lineTo(p.x, p.y);
-            });
-            ctx.stroke();
-
-            // area fill
-            const gradient = ctx.createLinearGradient(0, padding.top, 0, height - padding.bottom);
-            gradient.addColorStop(0, 'rgba(0, 224, 198, 0.25)');
-            gradient.addColorStop(1, 'rgba(0, 224, 198, 0)');
-
-            ctx.lineTo(points[points.length - 1].x, height - padding.bottom);
-            ctx.lineTo(points[0].x, height - padding.bottom);
-            ctx.closePath();
-            ctx.fillStyle = gradient;
-            ctx.fill();
-
-            // points
-            points.forEach(p => {
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
-                ctx.fillStyle = '#00E0C6';
-                ctx.fill();
-
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 9, 0, Math.PI * 2);
-                ctx.strokeStyle = 'rgba(0, 224, 198, 0.35)';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            });
-
-            // labels
-            ctx.fillStyle = '#A0A0A0';
-            ctx.font = '12px Noto Sans KR';
-            ctx.textAlign = 'center';
-
-            labels.forEach((label, index) => {
-                const p = points[index];
-                ctx.fillText(label.slice(5), p.x, height - 16);
-            });
-
-            // values
-            ctx.fillStyle = '#FFFFFF';
-            ctx.font = '12px Noto Sans KR';
-            points.forEach(p => {
-                ctx.fillText(`${p.value}건`, p.x, p.y - 12);
-            });
-        }
-        function setErrorState(title, message) {
-            if (pollTimer) {
-                clearInterval(pollTimer);
-                pollTimer = null;
-            }
-
-            heroStatus.textContent = title;
-            heroStatusText.textContent = message;
-            jobStatus.textContent = title;
-
-            loadingSection.style.display = 'none';
-            dashboardSection.style.display = 'block';
-
-            positiveSummary.textContent = '내용 없음';
-            negativeSummary.textContent = '내용 없음';
-            prosList.innerHTML = '<li>데이터 없음</li>';
-            consList.innerHTML = '<li>데이터 없음</li>';
-            modelsList.innerHTML = '<li>데이터 없음</li>';
-            compareChartArea.innerHTML = `<div class="compare-chart-empty">비교 제품 데이터 없음</div>`;
-            referenceList.innerHTML = `
-                <div class="reference-item">
-                    <strong>근거 링크 없음</strong>
-                    <p>${escapeHtml(message)}</p>
-                </div>
-            `;
-        }
-
-        function applyResult(data) {
-            if (pollTimer) {
-                clearInterval(pollTimer);
-                pollTimer = null;
-            }
-
-            heroStatus.textContent = '완료';
-            heroStatusText.textContent = '리포트 로딩이 완료되었습니다.';
-            jobStatus.textContent = '완료';
-
-            positiveSummary.textContent = clean(data.positiveSummary || '내용 없음');
-            negativeSummary.textContent = clean(data.negativeSummary || '내용 없음');
-
-            renderPointList(prosList, data.pros, '장점 데이터 없음');
-            renderPointList(consList, data.cons, '단점 데이터 없음');
-            renderModelList(modelsList, data.models, '언급된 모델 없음');
-            renderComparisonChart(data.models);
-            renderReferences(referenceList, data.pros, data.cons);
-
-            loadingSection.style.display = 'none';
-            dashboardSection.style.display = 'block';
-
-            setTimeout(() => {
-                renderMentionLineChart(data.monthly_counts);
-            }, 100);
-        }
-
-        function pollResult() {
-            heroStatus.textContent = '분석 중';
-            heroStatusText.textContent = '커뮤니티 데이터를 수집하고 있습니다.';
-            jobStatus.textContent = '분석 중';
-
-            fetch(`/api/result-data?keyword=${encodeURIComponent(keyword)}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (!data.error) {
-                        applyResult(data);
-                        return;
-                    }
-
-                    if (data.error === 'NOT_READY') {
-                        pollCount += 1;
-
-                        heroStatus.textContent = '분석 중';
-                        heroStatusText.textContent = `리포트 생성 대기 중입니다. (${pollCount})`;
-                        jobStatus.textContent = '분석 중';
-
-                        if (pollCount >= MAX_POLL_COUNT) {
-                            setErrorState('지연', '분석이 오래 걸리고 있습니다. 잠시 후 다시 확인해주세요.');
-                        }
-                        return;
-                    }
-
-                    if (data.error === 'NO_REPORT') {
-                        setErrorState('결과 없음', '아직 생성된 리포트가 없습니다.');
-                        return;
-                    }
-
-                    if (data.error === 'EMPTY_REPORT') {
-                        setErrorState('빈 리포트', '리포트 내용이 비어 있습니다.');
-                        return;
-                    }
-
-                    setErrorState('오류', `결과를 불러오지 못했습니다. (${data.error})`);
-                })
-                .catch(err => {
-                    console.error(err);
-                    setErrorState('오류', '결과 조회 중 오류가 발생했습니다.');
-                });
-        }
-
-        pollResult();
-        pollTimer = setInterval(pollResult, 2000);
-
-        window.addEventListener('beforeunload', function () {
-            if (pollTimer) {
-                clearInterval(pollTimer);
+document.addEventListener('DOMContentLoaded', function () {
+    const keywordInput = document.getElementById('keywordInput');
+    const resultSearchForm = document.getElementById('resultSearchForm');
+
+    const loadingSection = document.getElementById('loadingSection');
+    const dashboardSection = document.getElementById('dashboardSection');
+
+    const positiveSummary = document.getElementById('positiveSummary');
+    const negativeSummary = document.getElementById('negativeSummary');
+    const prosList = document.getElementById('prosList');
+    const consList = document.getElementById('consList');
+    const modelsList = document.getElementById('modelsList');
+    const referenceList = document.getElementById('referenceList');
+    const compareChartArea = document.getElementById('compareChartArea');
+    const mentionLineChart = document.getElementById('mentionLineChart');
+    const trendEmptyState = document.getElementById('trendEmptyState');
+    const siteMentionArea = document.getElementById('siteMentionArea');
+
+    const pageTitle = document.getElementById('pageTitle');
+    const loadingKeyword = document.getElementById('loadingKeyword');
+
+    const heroStatusText = document.getElementById('heroStatusText');
+    const jobStatus = document.getElementById('jobStatus');
+    const totalMentionCount = document.getElementById('totalMentionCount');
+    const relatedModelCount = document.getElementById('relatedModelCount');
+
+    const chartTabs = document.querySelectorAll('.chart-tab');
+    const chartPanels = document.querySelectorAll('.chart-panel');
+    const chartTitle = document.getElementById('chartTitle');
+    const chartSub = document.getElementById('chartSub');
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const keyword = urlParams.get('keyword');
+
+    let pollTimer = null;
+    let pollCount = 0;
+    let lastMonthlyCounts = null;
+    const MAX_POLL_COUNT = 120;
+
+    const chartCopy = {
+        trend: ['언급량 추이', '월별 커뮤니티 언급량 변화를 확인합니다.'],
+        site: ['사이트별 언급량', '커뮤니티별 수집량 차이를 확인합니다.'],
+        model: ['함께 언급된 제품', '비교 대상으로 함께 언급된 제품 비중을 확인합니다.']
+    };
+
+    chartTabs.forEach(tab => {
+        tab.addEventListener('click', function () {
+            chartTabs.forEach(t => t.classList.remove('active'));
+            chartPanels.forEach(p => p.classList.remove('active'));
+
+            this.classList.add('active');
+            const type = this.dataset.chart;
+            document.getElementById(type + 'ChartPanel').classList.add('active');
+
+            chartTitle.textContent = chartCopy[type][0];
+            chartSub.textContent = chartCopy[type][1];
+
+            if (type === 'trend' && lastMonthlyCounts) {
+                setTimeout(() => renderMentionLineChart(lastMonthlyCounts), 60);
             }
         });
     });
+
+    if (!keyword) {
+        setErrorState('결과 없음', '키워드가 없습니다.');
+        return;
+    }
+
+    keywordInput.value = keyword;
+    loadingKeyword.textContent = keyword;
+    pageTitle.innerHTML = `${escapeHtml(keyword)} 분석 결과`;
+
+    resultSearchForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const newKeyword = keywordInput.value.trim();
+        if (!newKeyword) return;
+
+        fetch('/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `keyword=${encodeURIComponent(newKeyword)}`
+        })
+        .then(res => res.json())
+        .then(() => {
+            window.location.href = `/analyze/result?keyword=${encodeURIComponent(newKeyword)}`;
+        })
+        .catch(err => {
+            console.error(err);
+            alert('분석 요청 중 오류가 발생했습니다.');
+        });
+    });
+
+    function clean(text) {
+        if (text == null) return '';
+        if (typeof text !== 'string') return String(text);
+        return text.replace(/[#*]/g, '').trim();
+    }
+
+    function escapeHtml(text) {
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function renderPointList(target, items, emptyText) {
+        if (!Array.isArray(items) || items.length === 0) {
+            target.innerHTML = `<li class="empty-point">${escapeHtml(emptyText)}</li>`;
+            return;
+        }
+
+        target.innerHTML = items.slice(0, 5).map((item, index) => {
+            const point = clean(item && item.point ? item.point : item);
+            return `
+                <li>
+                    <span class="point-rank">${index + 1}</span>
+                    <span class="point-text">${escapeHtml(point)}</span>
+                </li>
+            `;
+        }).join('');
+    }
+
+    function renderModelList(target, items, emptyText) {
+        if (!Array.isArray(items) || items.length === 0) {
+            target.innerHTML = `<li>${escapeHtml(emptyText)}</li>`;
+            return;
+        }
+
+        target.innerHTML = items.map(item => {
+            const name = clean(item?.name || '');
+            const context = clean(item?.context || '');
+            const count = Number(item?.mentionCount || 0);
+
+            if (context) {
+                return `<li>${escapeHtml(name)} - ${escapeHtml(context)} (${count}회)</li>`;
+            }
+            return `<li>${escapeHtml(name)} (${count}회)</li>`;
+        }).join('');
+    }
+
+    function renderReferences(target, pros, cons) {
+        const merged = [
+            ...(Array.isArray(pros) ? pros.map(item => ({ ...item, type: '장점' })) : []),
+            ...(Array.isArray(cons) ? cons.map(item => ({ ...item, type: '단점' })) : [])
+        ];
+
+        const filtered = merged.filter(item =>
+            item && item.point && Array.isArray(item.sources) && item.sources.length > 0
+        );
+
+        if (filtered.length === 0) {
+            target.innerHTML = `
+                <div class="reference-item empty-reference">
+                    <strong>근거 링크 없음</strong>
+                    <p>표시할 출처 링크가 없습니다.</p>
+                </div>
+            `;
+            return;
+        }
+
+        target.innerHTML = filtered.map(item => {
+            const point = escapeHtml(clean(item.point || ''));
+            const type = escapeHtml(item.type || '');
+
+            const links = item.sources
+                .filter(source => source && source.url)
+                .slice(0, 3)
+                .map(source => {
+                    const safeUrl = escapeHtml(source.url);
+                    return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeUrl}</a>`;
+                })
+                .join('');
+
+            return `
+                <div class="reference-item">
+                    <span class="reference-type">${type}</span>
+                    <strong>${point}</strong>
+                    <p>${links || '링크 없음'}</p>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderComparisonChart(models) {
+        if (!compareChartArea) return;
+
+        if (!Array.isArray(models) || models.length === 0) {
+            compareChartArea.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">🥧</div>
+                    <strong>비교 제품 데이터가 없습니다</strong>
+                    <p>함께 언급된 제품이 있으면 원형 그래프로 표시됩니다.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const sorted = [...models]
+            .filter(item => item && item.name)
+            .sort((a, b) => Number(b.mentionCount || 0) - Number(a.mentionCount || 0))
+            .slice(0, 5);
+
+        const total = sorted.reduce((sum, item) => sum + Number(item.mentionCount || 0), 0);
+
+        if (total === 0) {
+            compareChartArea.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">🥧</div>
+                    <strong>비교 제품 데이터가 없습니다</strong>
+                    <p>언급량이 0인 제품만 있습니다.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const colors = ['#ff7a1a', '#2563eb', '#10b981', '#8b5cf6', '#f43f5e'];
+
+        let currentPercent = 0;
+        const gradientParts = sorted.map((item, index) => {
+            const value = Number(item.mentionCount || 0);
+            const percent = (value / total) * 100;
+            const start = currentPercent;
+            const end = currentPercent + percent;
+            currentPercent = end;
+            return `${colors[index]} ${start}% ${end}%`;
+        });
+
+        const topItem = sorted[0];
+        const topPercent = ((Number(topItem.mentionCount || 0) / total) * 100).toFixed(1);
+
+        compareChartArea.innerHTML = `
+            <div class="compare-donut-layout">
+                <div class="compare-donut-chart" style="background: conic-gradient(${gradientParts.join(', ')});">
+                    <div class="compare-donut-center">
+                        <strong>${topPercent}%</strong>
+                        <span>${escapeHtml(topItem.name)}</span>
+                    </div>
+                </div>
+
+                <div class="compare-legend-list">
+                    ${sorted.map((item, index) => {
+                        const count = Number(item.mentionCount || 0);
+                        const percent = ((count / total) * 100).toFixed(1);
+
+                        return `
+                            <div class="compare-legend-item">
+                                <div class="compare-legend-left">
+                                    <span class="compare-color-dot" style="background:${colors[index]}"></span>
+                                    <span class="compare-model-name">${escapeHtml(item.name)}</span>
+                                </div>
+                                <span class="compare-model-percent">${count}회 · ${percent}%</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderSiteMentions(siteCounts) {
+        if (!siteMentionArea) return;
+
+        const entries = Object.entries(siteCounts || {})
+            .filter(([_, value]) => Number(value || 0) > 0)
+            .sort((a, b) => Number(b[1]) - Number(a[1]));
+
+        if (entries.length === 0) {
+            siteMentionArea.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📊</div>
+                    <strong>사이트별 데이터가 없습니다</strong>
+                    <p>사이트별 집계 값이 들어오면 막대 그래프로 표시됩니다.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const max = Math.max(...entries.map(([_, value]) => Number(value || 0)), 1);
+
+        siteMentionArea.innerHTML = `
+            <div class="site-bar-list">
+                ${entries.map(([site, value]) => {
+                    const count = Number(value || 0);
+                    const width = Math.max((count / max) * 100, 4).toFixed(1);
+                    return `
+                        <div class="site-bar-row">
+                            <span class="site-name">${escapeHtml(site)}</span>
+                            <div class="site-bar-track">
+                                <div class="site-bar-fill" style="width:${width}%"></div>
+                            </div>
+                            <strong>${count}건</strong>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+
+    function renderMentionLineChart(monthlyCounts) {
+        if (!mentionLineChart) return;
+
+        const ctx = mentionLineChart.getContext('2d');
+
+        if (!monthlyCounts || Object.keys(monthlyCounts).length === 0) {
+            trendEmptyState.style.display = 'flex';
+            mentionLineChart.style.display = 'none';
+            return;
+        }
+
+        const entries = Object.entries(monthlyCounts).sort(([a], [b]) => a.localeCompare(b));
+        const labels = entries.map(([month]) => month);
+        const values = entries.map(([_, count]) => Number(count || 0));
+
+        if (values.every(v => v === 0)) {
+            trendEmptyState.style.display = 'flex';
+            mentionLineChart.style.display = 'none';
+            return;
+        }
+
+        trendEmptyState.style.display = 'none';
+        mentionLineChart.style.display = 'block';
+
+        const dpr = window.devicePixelRatio || 1;
+        const width = mentionLineChart.clientWidth;
+        const height = mentionLineChart.clientHeight;
+
+        mentionLineChart.width = width * dpr;
+        mentionLineChart.height = height * dpr;
+
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, width, height);
+
+        const padding = { top: 26, right: 28, bottom: 42, left: 54 };
+        const chartW = width - padding.left - padding.right;
+        const chartH = height - padding.top - padding.bottom;
+        const maxValue = Math.max(...values, 1);
+        const stepX = labels.length > 1 ? chartW / (labels.length - 1) : chartW;
+
+        const points = values.map((value, index) => {
+            const x = padding.left + index * stepX;
+            const y = padding.top + chartH - (value / maxValue) * chartH;
+            return { x, y, value, label: labels[index] };
+        });
+
+        ctx.strokeStyle = '#eef0f4';
+        ctx.lineWidth = 1;
+
+        for (let i = 0; i <= 4; i++) {
+            const y = padding.top + (chartH / 4) * i;
+            ctx.beginPath();
+            ctx.moveTo(padding.left, y);
+            ctx.lineTo(width - padding.right, y);
+            ctx.stroke();
+        }
+
+        const areaGradient = ctx.createLinearGradient(0, padding.top, 0, height - padding.bottom);
+        areaGradient.addColorStop(0, 'rgba(255, 122, 26, 0.22)');
+        areaGradient.addColorStop(1, 'rgba(255, 122, 26, 0)');
+
+        ctx.beginPath();
+        points.forEach((p, i) => {
+            if (i === 0) ctx.moveTo(p.x, p.y);
+            else ctx.lineTo(p.x, p.y);
+        });
+        ctx.lineTo(points[points.length - 1].x, height - padding.bottom);
+        ctx.lineTo(points[0].x, height - padding.bottom);
+        ctx.closePath();
+        ctx.fillStyle = areaGradient;
+        ctx.fill();
+
+        ctx.strokeStyle = '#ff7a1a';
+        ctx.lineWidth = 3;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        ctx.beginPath();
+        points.forEach((p, i) => {
+            if (i === 0) ctx.moveTo(p.x, p.y);
+            else ctx.lineTo(p.x, p.y);
+        });
+        ctx.stroke();
+
+        points.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            ctx.strokeStyle = '#ff7a1a';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        });
+
+        ctx.fillStyle = '#6b7280';
+        ctx.font = '12px Pretendard, Noto Sans KR, sans-serif';
+        ctx.textAlign = 'center';
+
+        labels.forEach((label, index) => {
+            const p = points[index];
+            ctx.fillText(label.slice(5), p.x, height - 16);
+        });
+
+        ctx.fillStyle = '#111827';
+        ctx.font = '600 12px Pretendard, Noto Sans KR, sans-serif';
+        points.forEach(p => {
+            if (p.value > 0) ctx.fillText(`${p.value}`, p.x, p.y - 12);
+        });
+    }
+
+    function getMonthlyCounts(data) {
+        return data.monthly_counts || data.monthlyCounts || {};
+    }
+
+
+    function renderSiteMini(siteCounts) {
+        const target = document.getElementById('siteMiniArea');
+        if (!target) return;
+
+        const entries = Object.entries(siteCounts || {})
+            .filter(([_, value]) => Number(value || 0) > 0)
+            .sort((a, b) => Number(b[1]) - Number(a[1]))
+            .slice(0, 4);
+
+        if (entries.length === 0) {
+            target.className = 'mini-empty';
+            target.innerHTML = `<span>📊</span><p>데이터 없음</p>`;
+            return;
+        }
+
+        const max = Math.max(...entries.map(([_, value]) => Number(value || 0)), 1);
+        target.className = 'mini-bar-list';
+        target.innerHTML = entries.map(([site, value]) => {
+            const count = Number(value || 0);
+            const width = Math.max((count / max) * 100, 6).toFixed(1);
+            return `
+                <div class="mini-bar-item">
+                    <div class="mini-bar-meta">
+                        <span>${escapeHtml(site)}</span>
+                        <strong>${count}건</strong>
+                    </div>
+                    <div class="mini-bar-track"><div class="mini-bar-fill" style="width:${width}%"></div></div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderModelMini(models) {
+        const target = document.getElementById('modelMiniArea');
+        if (!target) return;
+
+        const sorted = Array.isArray(models)
+            ? [...models].filter(item => item && item.name).sort((a, b) => Number(b.mentionCount || 0) - Number(a.mentionCount || 0)).slice(0, 5)
+            : [];
+
+        const total = sorted.reduce((sum, item) => sum + Number(item.mentionCount || 0), 0);
+
+        if (sorted.length === 0 || total === 0) {
+            target.className = 'mini-empty';
+            target.innerHTML = `<span>🥧</span><p>데이터 없음</p>`;
+            return;
+        }
+
+        target.className = 'mini-model-list';
+        target.innerHTML = sorted.map((item, index) => {
+            const count = Number(item.mentionCount || 0);
+            const percent = ((count / total) * 100).toFixed(1);
+            return `
+                <div class="mini-model-item">
+                    <span class="mini-rank">${index + 1}</span>
+                    <span class="mini-name">${escapeHtml(item.name)}</span>
+                    <strong>${percent}%</strong>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function setSummary(data) {
+        const monthlyCounts = getMonthlyCounts(data);
+        const total = Object.values(monthlyCounts || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+        totalMentionCount.textContent = `${total.toLocaleString()}건`;
+
+        const models = Array.isArray(data.models) ? data.models : [];
+        relatedModelCount.textContent = `${models.length}개`;
+    }
+
+    function setErrorState(title, message) {
+        if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+        }
+
+        heroStatusText.textContent = message;
+        jobStatus.textContent = title;
+
+        loadingSection.style.display = 'none';
+        dashboardSection.style.display = 'block';
+
+        positiveSummary.textContent = '내용 없음';
+        negativeSummary.textContent = '내용 없음';
+        prosList.innerHTML = '<li class="empty-point">데이터 없음</li>';
+        consList.innerHTML = '<li class="empty-point">데이터 없음</li>';
+        modelsList.innerHTML = '<li>데이터 없음</li>';
+        totalMentionCount.textContent = '-';
+        relatedModelCount.textContent = '-';
+
+        trendEmptyState.style.display = 'flex';
+        mentionLineChart.style.display = 'none';
+
+        renderComparisonChart([]);
+        renderSiteMentions({});
+        renderSiteMini({});
+        renderModelMini([]);
+        referenceList.innerHTML = `
+            <div class="reference-item empty-reference">
+                <strong>근거 링크 없음</strong>
+                <p>${escapeHtml(message)}</p>
+            </div>
+        `;
+    }
+
+    function applyResult(data) {
+        if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+        }
+
+        heroStatusText.textContent = '리포트 로딩 완료';
+        jobStatus.textContent = '완료';
+
+        positiveSummary.textContent = clean(data.positiveSummary || '내용 없음');
+        negativeSummary.textContent = clean(data.negativeSummary || '내용 없음');
+
+        renderPointList(prosList, data.pros, '장점 데이터 없음');
+        renderPointList(consList, data.cons, '단점 데이터 없음');
+        renderModelList(modelsList, data.models, '언급된 모델 없음');
+        renderComparisonChart(data.models);
+        renderReferences(referenceList, data.pros, data.cons);
+        renderSiteMentions(data.siteCounts || data.site_counts || {});
+        renderSiteMini(data.siteCounts || data.site_counts || {});
+        renderModelMini(data.models);
+        setSummary(data);
+
+        const monthlyCounts = getMonthlyCounts(data);
+        lastMonthlyCounts = monthlyCounts;
+
+        loadingSection.style.display = 'none';
+        dashboardSection.style.display = 'block';
+
+        setTimeout(() => {
+            renderMentionLineChart(monthlyCounts);
+        }, 100);
+    }
+
+    function pollResult() {
+        heroStatusText.textContent = `리포트 생성 대기 중입니다. (${pollCount})`;
+        jobStatus.textContent = '분석 중';
+
+        fetch(`/api/result-data?keyword=${encodeURIComponent(keyword)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data.error) {
+                    applyResult(data);
+                    return;
+                }
+
+                if (data.error === 'NOT_READY') {
+                    pollCount += 1;
+
+                    if (pollCount >= MAX_POLL_COUNT) {
+                        setErrorState('지연', '분석이 오래 걸리고 있습니다. 잠시 후 다시 확인해주세요.');
+                    }
+                    return;
+                }
+
+                if (data.error === 'NO_REPORT') {
+                    setErrorState('결과 없음', '아직 생성된 리포트가 없습니다.');
+                    return;
+                }
+
+                if (data.error === 'EMPTY_REPORT') {
+                    setErrorState('빈 리포트', '리포트 내용이 비어 있습니다.');
+                    return;
+                }
+
+                setErrorState('오류', `결과를 불러오지 못했습니다. (${data.error})`);
+            })
+            .catch(err => {
+                console.error(err);
+                setErrorState('오류', '결과 조회 중 오류가 발생했습니다.');
+            });
+    }
+
+    pollResult();
+    pollTimer = setInterval(pollResult, 2000);
+
+    window.addEventListener('resize', function () {
+        if (lastMonthlyCounts && document.getElementById('trendChartPanel').classList.contains('active')) {
+            renderMentionLineChart(lastMonthlyCounts);
+        }
+    });
+
+    window.addEventListener('beforeunload', function () {
+        if (pollTimer) clearInterval(pollTimer);
+    });
+});
 </script>
 </body>
 </html>

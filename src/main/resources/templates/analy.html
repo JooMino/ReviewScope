@@ -3,71 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <title>ReviewScope - 분석</title>
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="style.css">
+
 </head>
-<body>
+<body class="analyze-page">
 <div class="left-sidebar">
     <div class="brand">
-        Review<span>Scope</span>
+        <strong>Review <span>Scope</span></strong>
+        <p>COMMUNITY ANALYTICS</p>
     </div>
     <ul class="menu-list">
         <li><a class="menu-item" th:href="@{/}">홈</a></li>
         <li><a class="menu-item active" th:href="@{/analyze}">분석</a></li>
-        <li><a class="menu-item">분석 기록</a></li>
         <li><a class="menu-item">설정</a></li>
     </ul>
 </div>
 
 <div class="main-container analyze-layout">
-    <div class="analyze-wrapper">
-        <header class="page-header">
-            <h1>키워드로 정밀 분석하기</h1>
-            <p>
-                제품명을 직접 입력해서 커뮤니티 여론을 깊게 분석해보세요.<br>
-                DC, 클리앙, 퀘이사존, 펨코의 최신 글을 기반으로 여론을 분석합니다.
-            </p>
-        </header>
+    <div class="analyze-wrapper review-analyze-wrapper">
+        <section class="review-hero">
+            <div class="review-hero-inner">
+                <h1 class="review-title">
+                    리뷰스코프를 통해<br>
+                    <span>대량의 리뷰</span>를 분석하세요
+                </h1>
 
-        <section class="section-card analyze-card">
-            <div class="analyze-title-row">
-                <span class="analyze-title">무엇을 분석할까요?</span>
+                <p class="review-subtitle">
+                    제품명 또는 키워드를 입력하면 기존 분석 결과를 먼저 찾아보고,<br>
+                    원하는 결과가 없을 때만 정밀 검사를 실행할 수 있습니다.
+                </p>
+
+                <form class="review-search-form" id="analyzeForm">
+                    <input
+                        type="text"
+                        id="keywordInput"
+                        name="keyword"
+                        placeholder="제품명 또는 키워드를 입력하세요 (예: G304)"
+                        required
+                    >
+                    <button type="submit" class="review-submit-btn" id="startBtn">
+                        분석 시작
+                    </button>
+                </form>
+
+                <p class="review-tip">모델명이나 제품명을 입력해 주세요.</p>
             </div>
-
-            <p class="analyze-sub">
-                제품명 또는 키워드를 입력하면 커뮤니티 최신 글을 기반으로 여론을 분석합니다.
-            </p>
-
-            <form class="analyze-form" id="analyzeForm">
-                <input
-                    type="text"
-                    id="keywordInput"
-                    name="keyword"
-                    placeholder="제품명 또는 키워드를 입력하세요 (예: G304)"
-                    required
-                >
-                <button type="submit" class="btn-submit" id="startBtn">
-                    분석 시작
-                </button>
-            </form>
-
-            <p class="tip">모델명을 적어주세요.</p>
         </section>
 
-        <section class="category-top5-wrapper">
-            <div class="category-top5-tabs">
-                <button class="top5-tab active" data-category="mouse" type="button">마우스</button>
-                <button class="top5-tab" data-category="keyboard" type="button">키보드</button>
-                <button class="top5-tab" data-category="headset" type="button">헤드셋</button>
-                <button class="top5-tab" data-category="monitor" type="button">모니터</button>
+        <section id="searchResultBox" class="section-card search-result-box" style="display:none;">
+            <div class="search-result-header">
+                <div>
+                    <span class="search-result-label">검색 결과</span>
+                    <h3 id="searchResultTitle">기존 분석 결과를 확인했습니다</h3>
+                </div>
+                <button type="button" id="closeSearchResult" class="btn-ghost">닫기</button>
             </div>
 
-            <div class="category-top5-card">
-                <div class="category-top5-header">
-                    <span class="label" id="top5-title">마우스 TOP 5</span>
-                    <span class="more">자세히 보기 &gt;</span>
-                </div>
-                <ul class="top5-list" id="top5-list"></ul>
+            <div id="candidateList" class="candidate-list"></div>
+
+            <div id="preciseBox" class="precise-box" style="display:none;">
+                <p>원하는 결과가 없다면 새로 수집해서 분석할 수 있습니다.</p>
+                <button type="button" id="preciseBtn" class="btn-submit precise-btn">정밀 검사 시작</button>
             </div>
+        </section>
+
+        <section class="review-guide-grid">
+            <article class="review-guide-card">
+                <div class="review-guide-icon">📊</div>
+                <span>REPORT</span>
+                <h4>저장된 분석 결과 확인</h4>
+                <p>이미 수집된 키워드는 기존 리포트를 바로 확인할 수 있습니다.</p>
+            </article>
+
+            <article class="review-guide-card">
+                <div class="review-guide-icon">⚡</div>
+                <span>ANALYSIS</span>
+                <h4>새로운 분석 실행</h4>
+                <p>원하는 결과가 없다면 실시간 수집과 정밀 분석을 시작합니다.</p>
+            </article>
+
+            <article class="review-guide-card">
+                <div class="review-guide-icon">🔗</div>
+                <span>EVIDENCE</span>
+                <h4>커뮤니티 근거 추적</h4>
+                <p>실제 게시글 기반 장단점과 근거 링크를 함께 제공합니다.</p>
+            </article>
         </section>
     </div>
 </div>
@@ -77,6 +97,52 @@ document.addEventListener('DOMContentLoaded', function () {
     const analyzeForm = document.getElementById('analyzeForm');
     const keywordInput = document.getElementById('keywordInput');
 
+    const searchResultBox = document.getElementById('searchResultBox');
+    const searchResultTitle = document.getElementById('searchResultTitle');
+    const candidateList = document.getElementById('candidateList');
+    const preciseBox = document.getElementById('preciseBox');
+    const preciseBtn = document.getElementById('preciseBtn');
+    const closeSearchResult = document.getElementById('closeSearchResult');
+
+    let lastSearchKeyword = '';
+
+    function escapeHtml(text) {
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function showSearchResult(data, keyword) {
+        const candidates = Array.isArray(data.candidates) ? data.candidates : [];
+
+        searchResultBox.style.display = 'block';
+        candidateList.innerHTML = '';
+
+        if (candidates.length > 0) {
+            searchResultTitle.textContent = '기존 분석 결과를 찾았습니다';
+            candidateList.innerHTML = candidates.map(item => `
+                <button type="button" class="candidate-item" data-keyword="${escapeHtml(item)}">
+                    <span class="candidate-name">${escapeHtml(item)}</span>
+                    <span class="candidate-action">결과 보기</span>
+                </button>
+            `).join('');
+            preciseBox.style.display = 'block';
+        } else {
+            searchResultTitle.textContent = '기존 분석 결과가 없습니다';
+            candidateList.innerHTML = `
+                <div class="candidate-empty">
+                    <strong>${escapeHtml(keyword)}</strong>에 대한 기존 리포트가 없습니다.
+                </div>
+            `;
+            preciseBox.style.display = 'block';
+        }
+
+        searchResultBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     if (analyzeForm) {
         analyzeForm.addEventListener('submit', function (e) {
             e.preventDefault();
@@ -84,11 +150,43 @@ document.addEventListener('DOMContentLoaded', function () {
             const keyword = keywordInput.value.trim();
             if (!keyword) return;
 
+            lastSearchKeyword = keyword;
+
             fetch('/search', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ keyword })
+            })
+            .then(res => res.json())
+            .then(data => showSearchResult(data, keyword))
+            .catch(err => {
+                console.error('검색 후보 조회 실패:', err);
+                alert('검색 중 오류가 발생했습니다. 다시 시도해주세요.');
+            });
+        });
+    }
+
+    if (candidateList) {
+        candidateList.addEventListener('click', function (e) {
+            const item = e.target.closest('.candidate-item');
+            if (!item) return;
+
+            const selectedKeyword = item.dataset.keyword;
+            window.location.href = `/analyze/result?keyword=${encodeURIComponent(selectedKeyword)}`;
+        });
+    }
+
+    if (preciseBtn) {
+        preciseBtn.addEventListener('click', function () {
+            const keyword = lastSearchKeyword || keywordInput.value.trim();
+            if (!keyword) return;
+
+            preciseBtn.disabled = true;
+            preciseBtn.textContent = '정밀 검사 요청 중...';
+
+            fetch('/search/precise', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({ keyword })
             })
             .then(res => res.json())
@@ -97,75 +195,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 window.location.href = `/analyze/result?keyword=${encodeURIComponent(nextKeyword)}`;
             })
             .catch(err => {
-                console.error('분석 시작 요청 실패:', err);
-                alert('분석 시작 중 오류가 발생했습니다. 다시 시도해주세요.');
+                console.error('정밀 검사 요청 실패:', err);
+                alert('정밀 검사 요청 중 오류가 발생했습니다.');
+                preciseBtn.disabled = false;
+                preciseBtn.textContent = '정밀 검사 시작';
             });
         });
     }
 
-    const rankingData = {
-        mouse: [
-            { rank: 1, name: "로지텍 G PRO X SUPERLIGHT 2" },
-            { rank: 2, name: "레이저 데스애더 V3 PRO" },
-            { rank: 3, name: "로지텍 G102 2세대" },
-            { rank: 4, name: "팜그립 게이밍 마우스 A" },
-            { rank: 5, name: "초경량 게이밍 마우스 B" }
-        ],
-        keyboard: [
-            { rank: 1, name: "키크론 Q1 Pro" },
-            { rank: 2, name: "앱코 K640" },
-            { rank: 3, name: "레오폴드 FC750R" },
-            { rank: 4, name: "체리 MX Board 3.0S" },
-            { rank: 5, name: "COX CK87" }
-        ],
-        headset: [
-            { rank: 1, name: "로지텍 G PRO X 2" },
-            { rank: 2, name: "HyperX Cloud III" },
-            { rank: 3, name: "SteelSeries Arctis Nova 7" },
-            { rank: 4, name: "Sony INZONE H9" },
-            { rank: 5, name: "Razer BlackShark V2 Pro" }
-        ],
-        monitor: [
-            { rank: 1, name: "LG 울트라기어 27GR95QE" },
-            { rank: 2, name: "삼성 오디세이 G5" },
-            { rank: 3, name: "델 S2721DGF" },
-            { rank: 4, name: "MSI MAG 274QRF-QD" },
-            { rank: 5, name: "기가바이트 M27Q" }
-        ]
-    };
-
-    const titleEl = document.getElementById('top5-title');
-    const listEl = document.getElementById('top5-list');
-    const tabs = document.querySelectorAll('.top5-tab');
-
-    function renderTop5(category) {
-        const labelMap = {
-            mouse: '마우스',
-            keyboard: '키보드',
-            headset: '헤드셋',
-            monitor: '모니터'
-        };
-
-        const items = rankingData[category] || [];
-        titleEl.textContent = `${labelMap[category]} TOP 5`;
-
-        listEl.innerHTML = items.map(item => `
-            <li class="top5-item">
-                <span class="top5-rank">${item.rank}</span>
-                <span class="top5-name">${item.name}</span>
-            </li>
-        `).join('');
-    }
-
-    tabs.forEach(tab => {
-        tab.addEventListener('click', function () {
-            tabs.forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-            renderTop5(this.dataset.category);
+    if (closeSearchResult) {
+        closeSearchResult.addEventListener('click', function () {
+            searchResultBox.style.display = 'none';
         });
-    });
-
-    renderTop5('mouse');
+    }
 });
 </script>
 </body>
