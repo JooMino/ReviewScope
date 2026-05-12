@@ -45,7 +45,7 @@ public class SearchController {
 
     @GetMapping("/")
     public String home() {
-        return "home";
+        return "analy";
     }
 
     @GetMapping("/analyze")
