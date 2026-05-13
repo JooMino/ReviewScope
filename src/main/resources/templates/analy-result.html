@@ -507,7 +507,21 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        const entries = Object.entries(monthlyCounts).sort(([a], [b]) => a.localeCompare(b));
+        const allEntries = Object.entries(monthlyCounts)
+            .sort(([a], [b]) => a.localeCompare(b));
+
+        const firstNonZeroIndex = allEntries.findIndex(
+            ([_, count]) => Number(count || 0) > 0
+        );
+
+        // 처음 언급량 나오기 2달 전부터 표시
+        const startIndex = Math.max(firstNonZeroIndex - 2, 0);
+
+        const entries =
+            firstNonZeroIndex === -1
+                ? allEntries
+                : allEntries.slice(startIndex);
+
         const labels = entries.map(([month]) => month);
         const values = entries.map(([_, count]) => Number(count || 0));
 
