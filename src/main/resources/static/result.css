@@ -1275,11 +1275,11 @@ body.result-page {
 
 /* 차트 너무 크지 않게 유지 */
 .chart-panel {
-    min-height: 140px;
+    min-height: 200px;
 }
 
 .line-chart-wrap {
-    height: 120px;
+    height: 200px;
 }
 
 .empty-state {
