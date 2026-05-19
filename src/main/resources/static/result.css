@@ -1108,6 +1108,59 @@ body.result-page {
     background: linear-gradient(90deg, var(--accent), #ffb15c);
 }
 
+.mini-site-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.mini-site-chart canvas {
+    width: 100%;
+    height: 170px;
+    display: block;
+}
+
+.mini-site-legend {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.mini-site-legend-item {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 8px minmax(0, 1fr);
+    align-items: center;
+    column-gap: 6px;
+    row-gap: 2px;
+    padding: 8px;
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    background: #fbfcfe;
+}
+
+.mini-site-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+}
+
+.mini-site-legend-item span:not(.mini-site-dot) {
+    overflow: hidden;
+    color: var(--text-main);
+    font-size: 12px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mini-site-legend-item strong {
+    grid-column: 2;
+    color: var(--text-soft);
+    font-size: 11px;
+    font-weight: 800;
+}
+
 .mini-model-list {
     display: flex;
     flex-direction: column;

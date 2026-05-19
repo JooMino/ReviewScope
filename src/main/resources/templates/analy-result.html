@@ -14,9 +14,8 @@
     </div>
 
     <ul class="menu-list">
-        <li><a class="menu-item" th:href="@{/}">홈</a></li>
-        <li><a class="menu-item active" th:href="@{/analyze}">분석</a></li>
-        <li><a class="menu-item">설정</a></li>
+        <li><a class="menu-item" th:href="@{/analyze}">분석</a></li>
+        <li><a class="menu-item active" th:href="@{/analyze/result}">분석결과</a></li>
     </ul>
 </div>
 
@@ -232,6 +231,8 @@ document.addEventListener('DOMContentLoaded', function () {
     let pollTimer = null;
     let pollCount = 0;
     let lastMonthlyCounts = null;
+    let lastSiteCounts = null;
+    let lastSiteMentions = null;
     const MAX_POLL_COUNT = 120;
 
     const chartCopy = {
@@ -258,15 +259,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    if (!keyword) {
-        setErrorState('결과 없음', '키워드가 없습니다.');
-        return;
-    }
-
-    keywordInput.value = keyword;
-    loadingKeyword.textContent = keyword;
-    pageTitle.innerHTML = `${escapeHtml(keyword)} 분석 결과`;
-
     resultSearchForm.addEventListener('submit', function (e) {
         e.preventDefault();
 
@@ -287,6 +279,15 @@ document.addEventListener('DOMContentLoaded', function () {
             alert('분석 요청 중 오류가 발생했습니다.');
         });
     });
+
+    if (!keyword) {
+        setErrorState('결과 없음', '키워드를 입력해 분석 결과를 조회해주세요.');
+        return;
+    }
+
+    keywordInput.value = keyword;
+    loadingKeyword.textContent = keyword;
+    pageTitle.innerHTML = `${escapeHtml(keyword)} 분석 결과`;
 
     function clean(text) {
         if (text == null) return '';
@@ -624,8 +625,11 @@ document.addEventListener('DOMContentLoaded', function () {
         return data.monthly_counts || data.monthlyCounts || {};
     }
 
+    function getSiteMentions(data) {
+        return data.site_mentions || data.siteMentions || {};
+    }
 
-    function renderSiteMini(siteCounts) {
+    function renderSiteMiniBars(siteCounts) {
         const target = document.getElementById('siteMiniArea');
         if (!target) return;
 
@@ -655,6 +659,146 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
             `;
         }).join('');
+    }
+
+    function renderSiteMini(siteCounts, siteMentions) {
+        const target = document.getElementById('siteMiniArea');
+        if (!target) return;
+
+        const normalizedMentions = siteMentions || {};
+        const sites = ['dc', 'fmk', 'clien'].filter(site =>
+            normalizedMentions[site] || Object.prototype.hasOwnProperty.call(siteCounts || {}, site)
+        );
+
+        Object.keys(normalizedMentions).forEach(site => {
+            if (!sites.includes(site)) sites.push(site);
+        });
+
+        Object.keys(siteCounts || {}).forEach(site => {
+            if (!sites.includes(site)) sites.push(site);
+        });
+
+        const monthSet = new Set();
+        sites.forEach(site => {
+            const monthly = normalizedMentions[site]?.monthly_counts || normalizedMentions[site]?.monthlyCounts || {};
+            Object.keys(monthly).forEach(month => monthSet.add(month));
+        });
+
+        const labels = Array.from(monthSet).sort();
+        const hasMonthlyData = labels.length > 0 && sites.some(site => {
+            const monthly = normalizedMentions[site]?.monthly_counts || normalizedMentions[site]?.monthlyCounts || {};
+            return labels.some(month => Number(monthly[month] || 0) > 0);
+        });
+        const hasTotalData = Object.values(siteCounts || {}).some(value => Number(value || 0) > 0);
+
+        if (!hasMonthlyData && !hasTotalData) {
+            target.className = 'mini-empty';
+            target.innerHTML = `<span>📊</span><p>데이터 없음</p>`;
+            return;
+        }
+
+        const colors = {
+            dc: '#ff7a1a',
+            fmk: '#2563eb',
+            clien: '#10b981'
+        };
+
+        target.className = 'mini-site-chart';
+        target.innerHTML = `
+            <canvas id="siteMiniChart"></canvas>
+            <div class="mini-site-legend">
+                ${sites.map(site => {
+                    const count = Number(siteCounts?.[site] ?? normalizedMentions[site]?.total_count ?? normalizedMentions[site]?.totalCount ?? 0);
+                    return `
+                        <div class="mini-site-legend-item">
+                            <span class="mini-site-dot" style="background:${colors[site] || '#8b5cf6'}"></span>
+                            <span>${escapeHtml(site)}</span>
+                            <strong>${count}건</strong>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+
+        const canvas = document.getElementById('siteMiniChart');
+        if (!canvas || !hasMonthlyData) return;
+
+        setTimeout(() => {
+            renderSiteMiniChart(canvas, sites, labels, normalizedMentions, colors);
+        }, 40);
+    }
+
+    function renderSiteMiniChart(canvas, sites, labels, siteMentions, colors) {
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+
+        if (!width || !height) return;
+
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, width, height);
+
+        const padding = { top: 14, right: 12, bottom: 24, left: 28 };
+        const chartW = width - padding.left - padding.right;
+        const chartH = height - padding.top - padding.bottom;
+        const series = sites.map(site => {
+            const monthly = siteMentions[site]?.monthly_counts || siteMentions[site]?.monthlyCounts || {};
+            return {
+                site,
+                values: labels.map(month => Number(monthly[month] || 0))
+            };
+        });
+        const maxValue = Math.max(...series.flatMap(item => item.values), 1);
+        const stepX = labels.length > 1 ? chartW / (labels.length - 1) : chartW;
+
+        ctx.strokeStyle = '#eef0f4';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 3; i++) {
+            const y = padding.top + (chartH / 3) * i;
+            ctx.beginPath();
+            ctx.moveTo(padding.left, y);
+            ctx.lineTo(width - padding.right, y);
+            ctx.stroke();
+        }
+
+        series.forEach(item => {
+            const points = item.values.map((value, index) => ({
+                x: padding.left + index * stepX,
+                y: padding.top + chartH - (value / maxValue) * chartH
+            }));
+
+            ctx.strokeStyle = colors[item.site] || '#8b5cf6';
+            ctx.lineWidth = 2;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            points.forEach((point, index) => {
+                if (index === 0) ctx.moveTo(point.x, point.y);
+                else ctx.lineTo(point.x, point.y);
+            });
+            ctx.stroke();
+
+            points.forEach(point => {
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 3.5, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                ctx.strokeStyle = colors[item.site] || '#8b5cf6';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+        });
+
+        ctx.fillStyle = '#6b7280';
+        ctx.font = '11px Pretendard, Noto Sans KR, sans-serif';
+        ctx.textAlign = 'center';
+        labels.forEach((label, index) => {
+            const x = padding.left + index * stepX;
+            ctx.fillText(label.slice(5), x, height - 7);
+        });
     }
 
     function renderModelMini(models) {
@@ -721,7 +865,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         renderComparisonChart([]);
         renderSiteMentions({});
-        renderSiteMini({});
+        renderSiteMini({}, {});
         renderModelMini([]);
         referenceList.innerHTML = `
             <div class="reference-item empty-reference">
@@ -749,7 +893,9 @@ document.addEventListener('DOMContentLoaded', function () {
         renderComparisonChart(data.models);
         renderReferences(referenceList, data.pros, data.cons);
         renderSiteMentions(data.siteCounts || data.site_counts || {});
-        renderSiteMini(data.siteCounts || data.site_counts || {});
+        lastSiteCounts = data.siteCounts || data.site_counts || {};
+        lastSiteMentions = getSiteMentions(data);
+        renderSiteMini(lastSiteCounts, lastSiteMentions);
         renderModelMini(data.models);
         setSummary(data);
 
@@ -809,6 +955,9 @@ document.addEventListener('DOMContentLoaded', function () {
     window.addEventListener('resize', function () {
         if (lastMonthlyCounts && document.getElementById('trendChartPanel').classList.contains('active')) {
             renderMentionLineChart(lastMonthlyCounts);
+        }
+        if (lastSiteMentions) {
+            renderSiteMini(lastSiteCounts || {}, lastSiteMentions);
         }
     });
 

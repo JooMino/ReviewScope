@@ -8,6 +8,8 @@ import com.example.demo.repository.CrawlReportRepository;
 import com.example.demo.repository.SourceMapRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,6 +30,8 @@ import java.util.stream.Collectors;
 @Controller
 public class SearchController {
 
+    private static final Logger logger = LoggerFactory.getLogger(SearchController.class);
+
     private final CrawlQueue crawlQueue;
     private final CrawlReportRepository crawlReportRepository;
     private final SourceMapRepository sourceMapRepository;
@@ -45,7 +49,7 @@ public class SearchController {
 
     @GetMapping("/")
     public String home() {
-        return "analy";
+        return "redirect:/analyze";
     }
 
     @GetMapping("/analyze")
@@ -54,7 +58,7 @@ public class SearchController {
     }
 
     @GetMapping("/analyze/result")
-    public String analyzeResultPage(@RequestParam("keyword") String keyword, Model model) {
+    public String analyzeResultPage(@RequestParam(value = "keyword", required = false) String keyword, Model model) {
         model.addAttribute("keyword", keyword);
         return "analy-result";
     }
@@ -177,15 +181,9 @@ public class SearchController {
                 models.add(modelItem);
             }
 
-            JsonNode monthlyNode = root.path("monthly_counts");
-
-            Map<String, Integer> monthlyCounts = new LinkedHashMap<>();
-
-            if (monthlyNode.isObject()) {
-                monthlyNode.fields().forEachRemaining(entry -> {
-                    monthlyCounts.put(entry.getKey(), entry.getValue().asInt());
-                });
-            }
+            Map<String, Integer> monthlyCounts = readIntegerMap(root, "monthly_counts", "monthlyCounts");
+            Map<String, Integer> siteCounts = readSiteMentionCounts(root);
+            Map<String, Object> siteMentions = readSiteMentions(root);
 
             Map<String, Object> result = new HashMap<>();
             result.put("summary", summary);
@@ -195,14 +193,81 @@ public class SearchController {
             result.put("cons", cons);
             result.put("models", models);
             result.put("monthly_counts",monthlyCounts);
+            result.put("site_counts", siteCounts);
+            result.put("site_mentions", siteMentions);
             return result;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.warn("Failed to parse report JSON for keyword={}", keyword, e);
             Map<String, Object> error = new HashMap<>();
             error.put("error", "JSON_PARSE_FAILED");
             return error;
         }
+    }
+
+    private Map<String, Integer> readIntegerMap(JsonNode root, String... fieldNames) {
+        Map<String, Integer> values = new LinkedHashMap<>();
+
+        for (String fieldName : fieldNames) {
+            JsonNode node = root.path(fieldName);
+            if (!node.isObject()) {
+                continue;
+            }
+
+            node.fields().forEachRemaining(entry -> {
+                values.put(entry.getKey(), entry.getValue().asInt());
+            });
+
+            if (!values.isEmpty()) {
+                return values;
+            }
+        }
+
+        return values;
+    }
+
+    private Map<String, Integer> readSiteMentionCounts(JsonNode root) {
+        Map<String, Integer> siteTotalMentions = readIntegerMap(root, "site_total_mentions", "siteTotalMentions");
+        if (!siteTotalMentions.isEmpty()) {
+            return siteTotalMentions;
+        }
+
+        Map<String, Integer> siteCounts = new LinkedHashMap<>();
+        JsonNode siteMentions = root.path("site_mentions");
+        if (!siteMentions.isObject()) {
+            siteMentions = root.path("siteMentions");
+        }
+
+        if (siteMentions.isObject()) {
+            siteMentions.fields().forEachRemaining(entry -> {
+                JsonNode siteNode = entry.getValue();
+                siteCounts.put(entry.getKey(), siteNode.path("total_count").asInt(0));
+            });
+        }
+
+        return siteCounts;
+    }
+
+    private Map<String, Object> readSiteMentions(JsonNode root) {
+        Map<String, Object> siteMentionData = new LinkedHashMap<>();
+        JsonNode siteMentions = root.path("site_mentions");
+        if (!siteMentions.isObject()) {
+            siteMentions = root.path("siteMentions");
+        }
+
+        if (!siteMentions.isObject()) {
+            return siteMentionData;
+        }
+
+        siteMentions.fields().forEachRemaining(entry -> {
+            JsonNode siteNode = entry.getValue();
+            Map<String, Object> siteData = new LinkedHashMap<>();
+            siteData.put("monthly_counts", readIntegerMap(siteNode, "monthly_counts", "monthlyCounts"));
+            siteData.put("total_count", siteNode.path("total_count").asInt(0));
+            siteMentionData.put(entry.getKey(), siteData);
+        });
+
+        return siteMentionData;
     }
 
     private List<Map<String, Object>> buildKeyPointsWithSources(String keyword, JsonNode keyPointsNode) {
@@ -220,19 +285,18 @@ public class SearchController {
                     .distinct()
                     .toList();
 
-            System.out.println("=================================");
-            System.out.println("keyword = [" + keyword + "]");
-            System.out.println("point = [" + point + "]");
-            System.out.println("filesRaw = [" + filesRaw + "]");
-            System.out.println("fileNames = " + fileNames);
-            System.out.println("hashes = " + hashes);
+            logger.debug(
+                    "Resolving sources: keyword={}, point={}, filesRaw={}, fileNames={}, hashes={}",
+                    keyword, point, filesRaw, fileNames, hashes
+            );
 
             List<SourceMap> found = sourceMapRepository.findByKeywordAndHashValueIn(keyword, hashes);
-            System.out.println("found size = " + found.size());
+            logger.debug("Matched source rows: keyword={}, count={}", keyword, found.size());
             for (SourceMap sm : found) {
-                System.out.println("FOUND => keyword=" + sm.getKeyword()
-                        + ", hash=" + sm.getHashValue()
-                        + ", url=" + sm.getUrl());
+                logger.debug(
+                        "Matched source row: keyword={}, hash={}, url={}",
+                        sm.getKeyword(), sm.getHashValue(), sm.getUrl()
+                );
             }
 
             Map<String, String> hashToUrl = found.stream()
@@ -243,17 +307,17 @@ public class SearchController {
                             LinkedHashMap::new
                     ));
 
-            System.out.println("hashToUrl = " + hashToUrl);
+            logger.debug("Source hash map: keyword={}, hashToUrl={}", keyword, hashToUrl);
 
             List<Map<String, String>> sources = new ArrayList<>();
             for (String fileName : fileNames) {
                 String hash = extractHashFromFileName(fileName);
-                System.out.println("fileName=" + fileName + ", extractedHash=" + hash);
+                logger.debug("Extracted source hash: fileName={}, hash={}", fileName, hash);
 
                 if (hash == null) continue;
 
                 String url = hashToUrl.get(hash);
-                System.out.println("matchedUrl=" + url);
+                logger.debug("Resolved source URL: hash={}, url={}", hash, url);
 
                 if (url == null || url.isBlank()) continue;
 
@@ -264,7 +328,7 @@ public class SearchController {
                 sources.add(source);
             }
 
-            System.out.println("final sources = " + sources);
+            logger.debug("Final sources: keyword={}, sources={}", keyword, sources);
 
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("point", point);
