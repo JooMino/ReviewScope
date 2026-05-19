@@ -122,21 +122,21 @@
                 <aside class="right-insight-panel">
                     <article class="side-widget">
                         <div class="side-widget-head">
-                            <span>사이트별 언급량</span>
-                            <strong>커뮤니티</strong>
+                            <span>함께 언급된 제품</span>
+                            <strong>TOP 5</strong>
                         </div>
-                        <div id="siteMiniArea" class="mini-empty">
-                            <span>📊</span>
+                        <div id="modelMiniArea" class="mini-empty">
+                            <span>🥧</span>
                             <p>데이터 없음</p>
                         </div>
                     </article>
 
                     <article class="side-widget">
                         <div class="side-widget-head">
-                            <span>함께 언급된 제품</span>
-                            <strong>TOP 5</strong>
+                            <span>함께 언급된 제품 비교</span>
+                            <strong>CONTEXT</strong>
                         </div>
-                        <div id="modelMiniArea" class="mini-empty">
+                        <div id="relatedProductList" class="related-product-list">
                             <span>🥧</span>
                             <p>데이터 없음</p>
                         </div>
@@ -208,6 +208,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const modelsList = document.getElementById('modelsList');
     const referenceList = document.getElementById('referenceList');
     const compareChartArea = document.getElementById('compareChartArea');
+    const relatedProductList = document.getElementById('relatedProductList');
     const mentionLineChart = document.getElementById('mentionLineChart');
     const trendEmptyState = document.getElementById('trendEmptyState');
     const siteMentionArea = document.getElementById('siteMentionArea');
@@ -857,6 +858,36 @@ document.addEventListener('DOMContentLoaded', function () {
         }).join('');
     }
 
+    function renderRelatedProducts(models) {
+        if (!relatedProductList) return;
+
+        const items = Array.isArray(models)
+            ? [...models]
+                .filter(item => item && (item.name || item.context))
+                .sort((a, b) => Number(b.mentionCount || 0) - Number(a.mentionCount || 0))
+                .slice(0, 5)
+            : [];
+
+        if (items.length === 0) {
+            relatedProductList.className = 'mini-empty';
+            relatedProductList.innerHTML = `<span>🥧</span><p>데이터 없음</p>`;
+            return;
+        }
+
+        relatedProductList.className = 'related-product-list';
+        relatedProductList.innerHTML = items.map(item => {
+            const name = clean(item.name || '');
+            const context = clean(item.context || '');
+
+            return `
+                <div class="related-product-item">
+                    <strong>이름 : ${escapeHtml(name || '이름 없음')}</strong>
+                    <p>${escapeHtml(context || '내용 없음')}</p>
+                </div>
+            `;
+        }).join('');
+    }
+
     function setSummary(data) {
         const monthlyCounts = getMonthlyCounts(data);
         const total = Object.values(monthlyCounts || {}).reduce((sum, value) => sum + Number(value || 0), 0);
@@ -893,6 +924,7 @@ document.addEventListener('DOMContentLoaded', function () {
         renderSiteMentions({});
         renderSiteMini({}, {});
         renderModelMini([]);
+        renderRelatedProducts([]);
         referenceList.innerHTML = `
             <div class="reference-item empty-reference">
                 <strong>근거 링크 없음</strong>
@@ -922,6 +954,7 @@ document.addEventListener('DOMContentLoaded', function () {
         lastSiteMentions = getSiteMentions(data);
         renderSiteMini(lastSiteCounts, lastSiteMentions);
         renderModelMini(data.models);
+        renderRelatedProducts(data.models);
         setSummary(data);
 
         const monthlyCounts = getMonthlyCounts(data);

@@ -1234,6 +1234,37 @@ body.result-page {
     font-weight: 800;
 }
 
+.related-product-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 360px;
+    overflow-y: auto;
+}
+
+.related-product-item {
+    padding: 12px;
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    background: #fff;
+}
+
+.related-product-item strong {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text-main);
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.4;
+}
+
+.related-product-item p {
+    margin: 0;
+    color: var(--text-sub);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
 /* 하단 카드가 위 차트랑 자연스럽게 맞도록 */
 .insight-grid,
 .reference-card {
