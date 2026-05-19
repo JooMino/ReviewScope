@@ -1448,7 +1448,7 @@ body.result-page {
 }
 
 .dashboard-section {
-    gap: 28px;
+    gap: 34px;
 }
 
 .right-insight-panel {
@@ -1470,4 +1470,62 @@ body.result-page {
     flex: 1;
     height: auto;
     min-height: 520px;
+}
+
+.analytics-grid {
+    grid-template-columns: 1fr;
+    align-items: start;
+}
+
+.analytics-grid .main-chart-card {
+    display: block;
+}
+
+.analytics-grid .chart-panel.active {
+    display: block;
+}
+
+.analytics-grid .line-chart-wrap {
+    height: 320px;
+    min-height: 320px;
+}
+
+.insight-grid {
+    gap: 28px;
+}
+
+.dashboard-section > .insight-grid {
+    margin-top: 28px;
+}
+
+.insight-card {
+    display: flex;
+    flex-direction: column;
+    height: 360px;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.insight-card .point-list,
+.insight-card .mini-model-list,
+.insight-card .related-product-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.card-badge {
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: var(--card-soft);
+    color: var(--text-sub);
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.analytics-grid #trendEmptyState {
+    min-height: 260px;
 }
