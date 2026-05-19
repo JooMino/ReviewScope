@@ -881,7 +881,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             return `
                 <div class="related-product-item">
-                    <strong>이름 : ${escapeHtml(name || '이름 없음')}</strong>
+                    <strong>${escapeHtml(name || '이름 없음')}</strong>
                     <p>${escapeHtml(context || '내용 없음')}</p>
                 </div>
             `;
