@@ -1499,19 +1499,7 @@ body.result-page {
 }
 
 .insight-card {
-    display: flex;
-    flex-direction: column;
-    height: 500px;
-    min-height: 0;
-    overflow: hidden;
-}
-
-.insight-card .point-list,
-.insight-card .mini-model-list,
-.insight-card .related-product-list {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
+    min-height: 280px;
 }
 
 .card-badge {
