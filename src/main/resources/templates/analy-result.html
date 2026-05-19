@@ -304,7 +304,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .replace(/'/g, '&#039;');
     }
 
-    function renderPointList(target, items, emptyText) {
+    function renderPointList(target, items, emptyText, sourceLabel) {
         if (!Array.isArray(items) || items.length === 0) {
             target.innerHTML = `<li class="empty-point">${escapeHtml(emptyText)}</li>`;
             return;
@@ -312,10 +312,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
         target.innerHTML = items.slice(0, 5).map((item, index) => {
             const point = clean(item && item.point ? item.point : item);
+            const sources = Array.isArray(item?.sources) ? item.sources : [];
+            const sourceLinks = sources
+                .filter(source => source && source.url)
+                .slice(0, 3)
+                .map((source, sourceIndex) => {
+                    const safeUrl = escapeHtml(source.url);
+                    const label = `${sourceLabel}${sourceIndex + 1}`;
+                    return `<a class="point-source-link" href="${safeUrl}" target="_blank" rel="noopener noreferrer" title="${safeUrl}">${escapeHtml(label)}</a>`;
+                })
+                .join('');
+
             return `
                 <li>
                     <span class="point-rank">${index + 1}</span>
-                    <span class="point-text">${escapeHtml(point)}</span>
+                    <span class="point-text">
+                        ${escapeHtml(point)}
+                        ${sourceLinks ? `<span class="point-source-links">${sourceLinks}</span>` : ''}
+                    </span>
                 </li>
             `;
         }).join('');
@@ -609,9 +623,21 @@ document.addEventListener('DOMContentLoaded', function () {
         ctx.font = '12px Pretendard, Noto Sans KR, sans-serif';
         ctx.textAlign = 'center';
 
+        const maxXAxisLabels = Math.max(4, Math.floor(chartW / 58));
+        const labelStep = Math.max(1, Math.ceil(labels.length / maxXAxisLabels));
+
         labels.forEach((label, index) => {
+            const shouldShowLabel =
+                index === 0 ||
+                index === labels.length - 1 ||
+                index % labelStep === 0;
+
+            if (!shouldShowLabel) return;
+
             const p = points[index];
-            ctx.fillText(label.slice(5), p.x, height - 16);
+            const [year, month] = String(label).split('-');
+            const displayLabel = year && month ? `${year.slice(2)}/${month}` : label;
+            ctx.fillText(displayLabel, p.x, height - 16);
         });
 
         ctx.fillStyle = '#111827';
@@ -887,11 +913,10 @@ document.addEventListener('DOMContentLoaded', function () {
         positiveSummary.textContent = clean(data.positiveSummary || '내용 없음');
         negativeSummary.textContent = clean(data.negativeSummary || '내용 없음');
 
-        renderPointList(prosList, data.pros, '장점 데이터 없음');
-        renderPointList(consList, data.cons, '단점 데이터 없음');
+        renderPointList(prosList, data.pros, '장점 데이터 없음', '장점');
+        renderPointList(consList, data.cons, '단점 데이터 없음', '단점');
         renderModelList(modelsList, data.models, '언급된 모델 없음');
         renderComparisonChart(data.models);
-        renderReferences(referenceList, data.pros, data.cons);
         renderSiteMentions(data.siteCounts || data.site_counts || {});
         lastSiteCounts = data.siteCounts || data.site_counts || {};
         lastSiteMentions = getSiteMentions(data);

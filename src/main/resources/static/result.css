@@ -609,6 +609,26 @@ body.result-page {
     flex: 1;
 }
 
+.point-source-links {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-left: 8px;
+    vertical-align: baseline;
+}
+
+.point-source-link {
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.point-source-link:hover {
+    text-decoration: underline;
+}
+
 .empty-point {
     color: var(--text-sub) !important;
 }
@@ -1390,4 +1410,8 @@ body.result-page {
     .right-insight-panel {
         grid-template-columns: 1fr;
     }
+}
+
+.reference-card {
+    display: none;
 }
